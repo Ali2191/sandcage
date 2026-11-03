@@ -20,6 +20,7 @@ temp directory itself is not listable by other users (see :mod:`workspace`).
 from __future__ import annotations
 
 import errno
+import hashlib
 import os
 import stat
 from collections.abc import Callable, Iterator
@@ -251,6 +252,22 @@ def read_bytes(root: Path, path: str, *, limit: int) -> tuple[bytes, bool]:
         finally:
             os.close(fd)
     return data[:limit], len(data) > limit
+
+
+def sha256(root: Path, path: str) -> str:
+    """The SHA-256 of a whole regular file, read in chunks through the same no-follow walk."""
+    parts = parts_of(path)
+    shown = _shown(parts)
+    digest = hashlib.sha256()
+    with directory(root, parts[:-1]) as parent:
+        fd = _open_file(parent, parts[-1], shown, _READ_FLAGS)
+        try:
+            _require_regular(fd, shown)
+            while chunk := os.read(fd, _CHUNK):
+                digest.update(chunk)
+        finally:
+            os.close(fd)
+    return digest.hexdigest()
 
 
 def try_read(root: Path, path: str, *, limit: int) -> bytes | None:
