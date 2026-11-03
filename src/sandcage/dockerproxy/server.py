@@ -109,8 +109,10 @@ class DockerProxy:
             await self._serve_one(reader, writer)
         finally:
             writer.close()
-            with contextlib.suppress(ConnectionError):
-                await writer.wait_closed()
+            try:
+                await asyncio.wait_for(writer.wait_closed(), self._timeout)
+            except (ConnectionError, TimeoutError):
+                writer.transport.abort()  # a client that never lets go loses its socket
 
     async def _serve_one(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:

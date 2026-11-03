@@ -149,6 +149,11 @@ def stop_proxy(running: Running) -> None:
     async def close() -> None:
         running.server.close()
         await running.server.wait_closed()
+        # Python 3.11's wait_closed does not wait for connection handlers; let any that
+        # are still closing their socket finish before the loop stops.
+        others = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+        if others:
+            await asyncio.wait(others, timeout=5)
 
     asyncio.run_coroutine_threadsafe(close(), running.loop).result(5)
     running.loop.call_soon_threadsafe(running.loop.stop)

@@ -64,6 +64,17 @@ def server() -> Iterator[tuple[str, list[bytes], list[Handler]]]:
                     if not chunk:
                         break
                     data += chunk
+                head, _, body = data.partition(b"\r\n\r\n")
+                length = 0
+                for line in head.split(b"\r\n")[1:]:
+                    name, _, value = line.partition(b":")
+                    if name.strip().lower() == b"content-length":
+                        length = int(value.strip())
+                while len(body) < length:  # read the whole body, as Docker does
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    body += chunk
                 requests.append(data)
                 if handlers:
                     handlers.pop(0)(data, conn)
