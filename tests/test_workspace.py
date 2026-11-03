@@ -202,9 +202,11 @@ def test_read_write_and_list(repo: Path, temp_root: Path) -> None:
 
 
 def test_writes_are_capped(repo: Path, temp_root: Path) -> None:
-    with Workspace.create(repo, temp_root=temp_root) as ws:
-        with pytest.raises(WorkspaceError, match="larger than"):
-            ws.write_file("big.txt", "x" * (workspace.WRITE_LIMIT + 1))
+    with (
+        Workspace.create(repo, temp_root=temp_root) as ws,
+        pytest.raises(WorkspaceError, match="larger than"),
+    ):
+        ws.write_file("big.txt", "x" * (workspace.WRITE_LIMIT + 1))
 
 
 def test_errors_never_name_host_paths(repo: Path, temp_root: Path) -> None:
@@ -234,7 +236,7 @@ def test_read_text_is_the_policy_view(repo: Path, temp_root: Path) -> None:
 # --- cleanup in every failure ordering -----------------------------------------------
 
 
-class Boom(Exception):
+class BoomError(Exception):
     pass
 
 
@@ -271,10 +273,10 @@ def test_unexpected_exception_still_cleans_up(
     repo: Path, temp_root: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def fail(*args: object, **kwargs: object) -> safefs.CopyReport:
-        raise Boom
+        raise BoomError
 
     monkeypatch.setattr(safefs, "copy_tree", fail)
-    with pytest.raises(Boom):
+    with pytest.raises(BoomError):
         Workspace.create(repo, temp_root=temp_root)
     assert leftovers(temp_root) == []
 
@@ -287,16 +289,17 @@ def test_the_real_copy_limit_cleans_up(repo: Path, temp_root: Path) -> None:
 
 def test_cleanup_is_idempotent_and_exists_reports_it(repo: Path, temp_root: Path) -> None:
     ws = Workspace.create(repo, temp_root=temp_root)
-    assert ws.exists
+    before = ws.exists
     ws.cleanup()
-    assert not ws.exists
+    after = ws.exists
+    assert (before, after) == (True, False)
     ws.cleanup()
     assert leftovers(temp_root) == []
 
 
 def test_cleanup_after_an_error_inside_the_block(repo: Path, temp_root: Path) -> None:
-    with pytest.raises(Boom), Workspace.create(repo, temp_root=temp_root):
-        raise Boom
+    with pytest.raises(BoomError), Workspace.create(repo, temp_root=temp_root):
+        raise BoomError
     assert leftovers(temp_root) == []
 
 
