@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.7"
+      - name: Install pinned tools
+        run: uv sync --locked
+      - name: Lint, types, tests, env-file check
+        run: make check
+        env:
+          HYPOTHESIS_PROFILE: ci

@@ -1,0 +1,23 @@
+# Secrets: never commit real env files. Only *.example files are tracked.
+.env
+.env.*
+!.env.example
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
