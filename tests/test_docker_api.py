@@ -8,6 +8,7 @@ import socket
 import struct
 import tempfile
 import threading
+import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
@@ -194,3 +195,37 @@ def test_closing_a_stream_unblocks_its_reader(
     assert done.wait(2)
     hold.set()
     assert received == [b"partial"]
+
+
+def test_close_from_another_thread_leaves_the_descriptor_to_the_reader() -> None:
+    """Regression: closing the socket under a reader made CPython poll fd -1 for the whole
+    socket timeout. close() now only shuts down; the reading thread closes the fd."""
+    from sandcage.sandbox import docker_api
+
+    ours, theirs = socket.socketpair()
+    ours.settimeout(5)
+    stream = docker_api._SocketStream(ours, frame(b"first"))
+    released_by: list[str] = []
+    real_release = stream._release
+
+    def recording_release() -> None:
+        released_by.append(threading.current_thread().name)
+        real_release()
+
+    stream._release = recording_release  # type: ignore[method-assign]
+    got_first = threading.Event()
+    done = threading.Event()
+
+    def read() -> None:
+        for _chunk in stream:
+            got_first.set()
+        done.set()
+
+    threading.Thread(target=read, name="reader", daemon=True).start()
+    assert got_first.wait(2)
+    started = time.monotonic()
+    stream.close()
+    assert done.wait(1)
+    assert time.monotonic() - started < 1
+    assert released_by == ["reader"]
+    theirs.close()

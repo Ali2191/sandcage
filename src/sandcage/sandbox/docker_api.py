@@ -16,6 +16,7 @@ import os
 import re
 import socket
 import struct
+import threading
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Final, Protocol
 from urllib.parse import quote, urlencode, urlsplit
@@ -114,13 +115,22 @@ def demux(chunks: Iterator[bytes]) -> Iterator[bytes]:
 
 
 class _SocketStream:
-    """An exec's hijacked connection. ``close`` shuts it down, which also unblocks a
-    reader thread waiting in ``recv``."""
+    """An exec's hijacked connection.
+
+    ``close`` may be called from another thread to stop a reader: it only *shuts the
+    socket down*, which wakes a reader blocked in ``recv``. The descriptor itself is
+    closed by whoever is not using it: the reader when it finishes, or ``close`` when no
+    one is reading. Closing it under a reader would let CPython poll the dead descriptor
+    (-1) for the whole socket timeout instead of returning.
+    """
 
     def __init__(self, sock: socket.socket, leftover: bytes) -> None:
         self._sock = sock
         self._leftover = leftover
+        self._lock = threading.Lock()
         self._closed = False
+        self._reading = False
+        self._released = False
 
     def _raw(self) -> Iterator[bytes]:
         if self._leftover:
@@ -129,7 +139,7 @@ class _SocketStream:
             try:
                 chunk = self._sock.recv(65536)
             except OSError:
-                if self.is_closed():  # closed from another thread to stop the reader
+                if self.is_closed():  # shut down from another thread to stop the reader
                     return
                 raise
             if not chunk:
@@ -137,20 +147,36 @@ class _SocketStream:
             yield chunk
 
     def is_closed(self) -> bool:
-        return self._closed
+        with self._lock:
+            return self._closed
 
     def __iter__(self) -> Iterator[bytes]:
+        with self._lock:
+            if self._reading or self._released:
+                raise DockerError("an exec stream can be read only once")
+            self._reading = True
         try:
             yield from demux(self._raw())
         finally:
-            self.close()
+            with self._lock:
+                self._closed = True
+                self._reading = False
+            self._release()
 
     def close(self) -> None:
-        if self._closed:
-            return
-        self._closed = True
+        with self._lock:
+            self._closed = True
+            reading = self._reading
         with contextlib.suppress(OSError):  # already disconnected by the other side
             self._sock.shutdown(socket.SHUT_RDWR)
+        if not reading:
+            self._release()
+
+    def _release(self) -> None:
+        with self._lock:
+            if self._released:
+                return
+            self._released = True
         self._sock.close()
 
 
