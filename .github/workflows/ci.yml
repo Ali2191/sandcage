@@ -23,3 +23,19 @@ jobs:
         run: make check
         env:
           HYPOTHESIS_PROFILE: ci
+
+  docker:
+    # The real-Docker twins of the sandbox tests (plain runc: no gVisor on CI runners).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.7"
+      - name: Install pinned tools
+        run: uv sync --locked
+      - name: Build the sandbox image
+        run: make sandbox-image
+      - name: Docker-marked tests
+        run: make test-docker

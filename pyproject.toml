@@ -53,5 +53,7 @@ warn_unreachable = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers --strict-config"
+# Docker-marked tests need a daemon and the sandbox image: `make test-docker` runs them.
+addopts = "-q --strict-markers --strict-config -m 'not docker'"
+markers = ["docker: needs a running Docker daemon and the sandbox image (make test-docker)"]
 xfail_strict = true

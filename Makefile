@@ -1,4 +1,4 @@
-.PHONY: check lint types test env-check fmt
+.PHONY: check lint types test env-check fmt sandbox-image test-docker
 
 check: lint types test env-check
 
@@ -18,3 +18,11 @@ env-check:
 fmt:
 	uv run --locked ruff check --fix .
 	uv run --locked ruff format .
+
+# The sandbox image is built on the host: the Docker socket proxy refuses builds.
+sandbox-image:
+	docker build -t sandcage-sandbox:latest src/sandcage/sandbox/image
+
+# Tests that need a real Docker daemon (and the sandbox image).
+test-docker:
+	uv run --locked pytest -m docker
