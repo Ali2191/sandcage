@@ -8,7 +8,7 @@ from hypothesis import strategies as st
 
 from sandcage.masking import (
     JsonValue,
-    contains_placeholder,
+    count_placeholders,
     is_env_file,
     is_secret_name,
     mask,
@@ -254,9 +254,9 @@ def test_mask_value_recurses_through_nested_data() -> None:
     }
 
 
-def test_contains_placeholder() -> None:
-    assert contains_placeholder(f"x = {placeholder('jwt')}")
-    assert not contains_placeholder("x = [MASKED]")
+def test_count_placeholders() -> None:
+    assert count_placeholders(f"x = {placeholder('jwt')} {placeholder('email')}") == 2
+    assert count_placeholders("x = [MASKED]") == 0
 
 
 # --- properties ----------------------------------------------------------------------

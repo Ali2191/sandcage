@@ -1,0 +1,279 @@
+# Sandcage rulebook.
+#
+# Rules are checked top to bottom; the first rule whose tools and matchers all fit the
+# action decides. If no rule fits, the action is denied (default.deny). Plans and learned
+# rules are merged with "strictest wins", so they can only narrow what this file allows.
+#
+# Decisions: allow, ask (a human decides), deny. Risks: low, medium, high, critical.
+# Matchers are a fixed set of names (see src/sandcage/policy/matchers.py); a rule's
+# matchers must all hold. Every reason is shown to people as written.
+
+version: 1
+workspace: /workspace
+
+secrets:
+  # Matched case-insensitively on workspace-relative paths. A pattern without a slash
+  # matches any path component (so ".ssh" covers everything under it).
+  globs:
+    - .env
+    - .env.*
+    - "*.env"
+    - .envrc
+    - "*.pem"
+    - "*.key"
+    - "*.p12"
+    - "*.pfx"
+    - id_rsa*
+    - id_dsa*
+    - id_ecdsa*
+    - id_ed25519*
+    - .git-credentials
+    - .gitconfig
+    - "**/.git/config"
+    - .netrc
+    - _netrc
+    - .npmrc
+    - .pypirc
+    - .pgpass
+    - .htpasswd
+    - .ssh
+    - .aws
+    - "**/.docker/config.json"
+    - .kube
+  # Any path component naming one of these words on its own (not "secretary.py").
+  name_pattern: '(?:^|[^a-z0-9])(?:secrets?|credentials?|passwords?|passwd|api[_-]?keys?|private[_-]?keys?|access[_-]?tokens?)(?:[^a-z0-9]|$)'
+
+# Paths outside the workspace a command may still name.
+safe_paths: [/dev/null, /dev/stdout, /dev/stderr]
+
+# What counts as a test file (for ask.edit_tests and the diff guard).
+test_files: [tests, test, "test_*", "*_test", "*_test.*", conftest.py]
+
+delete_programs: [rm, unlink, rmdir, shred]
+
+# Program -> subcommands that install packages.
+package_managers:
+  pip: [install, download]
+  uv: [pip install, add, sync, tool install]
+  poetry: [add, install]
+  pipx: [install, inject, run]
+  conda: [install, create]
+  mamba: [install, create]
+  npm: [install, i, add, ci]
+  yarn: [add, install, global]
+  pnpm: [add, install, i]
+  apt: [install]
+  apt-get: [install]
+  apk: [add]
+  brew: [install, reinstall]
+  gem: [install]
+  cargo: [install, add]
+  go: [install, get]
+
+taint:
+  # Reading untrusted content taints the run for the next `window` actions.
+  tag: prompt_injection_suspected
+  window: 5
+  untrusted_tools: [read_file, http_get]
+  # Commands that print workspace files to the agent (their file arguments taint too).
+  reader_programs: [cat, head, tail, less, more]
+  # Under taint, a command segment that does not start with one of these needs a human.
+  known_commands: [pytest, python -m pytest, ls, cat]
+
+diff_guard:
+  code_files: ["*.py", "*.pyi", "*.sh", "*.bash", "*.js", "*.mjs", "*.cjs", "*.jsx", "*.ts", "*.tsx"]
+  network_exec:
+    - {name: requests, pattern: '\bimport\s+requests\b|\bfrom\s+requests\b|\brequests\.\w'}
+    - {name: urllib, pattern: '\burllib\d?\b'}
+    - {name: http.client, pattern: '\bhttp\.client\b|\bhttplib\b'}
+    - {name: socket, pattern: '\bsocket\b'}
+    - {name: subprocess, pattern: '\bsubprocess\b'}
+    - {name: os.system, pattern: '\bos\.system\s*\('}
+    - {name: os.popen, pattern: '\bos\.popen\s*\('}
+    - {name: os.exec/spawn, pattern: '\bos\.(?:exec|spawn|posix_spawn)\w*\s*\('}
+    - {name: eval, pattern: '(?<![\w.])eval\s*\('}
+    - {name: exec, pattern: '(?<![\w.])exec\s*\('}
+    - {name: dynamic import, pattern: '\b__import__\s*\(|\bimportlib\b'}
+    - {name: child_process, pattern: '\bchild_process\b'}
+    - {name: fetch, pattern: '(?<![\w.])fetch\s*\(|\bXMLHttpRequest\b'}
+  test_config_files: [pytest.ini, setup.cfg, tox.ini, pyproject.toml, conftest.py]
+  rules:
+    secrets:
+      id: diff.deny_secrets
+      decision: deny
+      risk: critical
+      reason: Writing secrets into files is blocked.
+    network_exec:
+      id: diff.ask_network_exec
+      decision: ask
+      risk: high
+      reason: This edit adds code that can reach the network or run programs, so a human must review it.
+    weakened_tests:
+      id: diff.deny_weakened_tests
+      decision: deny
+      risk: high
+      reason: Weakening the tests is blocked; fix the code instead.
+
+rules:
+  # --- Paths (read_file, write_file, list_dir) ---
+  - id: path.deny_outside_workspace
+    tools: [read_file, write_file, list_dir]
+    match: {path_outside_workspace: true}
+    decision: deny
+    risk: high
+    reason: The agent may only touch files inside the workspace.
+
+  - id: path.deny_secrets
+    tools: [read_file, write_file, list_dir]
+    match: {path_secret: true}
+    decision: deny
+    risk: critical
+    reason: Secret files (keys, credentials, .env) are never readable or writable.
+
+  - id: ask.edit_tests
+    tools: [write_file]
+    match: {path_is_test: true}
+    decision: ask
+    risk: medium
+    reason: Changing a test needs a human's approval.
+
+  - id: path.allow_workspace
+    tools: [read_file, write_file, list_dir]
+    match: {always: true}
+    decision: allow
+    risk: low
+    reason: Files inside the workspace are allowed.
+
+  # --- Commands (run_command) ---
+  - id: ask.unparseable_command
+    tools: [run_command]
+    match: {parse_error: true}
+    decision: ask
+    risk: medium
+    reason: Sandcage cannot read this command with certainty, so a human must check it.
+
+  - id: net.deny_tools
+    tools: [run_command]
+    match: {program_in: [curl, wget, nc, ncat, netcat, socat, telnet, ssh, scp, sftp, ftp, tftp, rsync, aria2c, lftp]}
+    decision: deny
+    risk: critical
+    reason: Network tools are blocked; nothing may be sent off the machine.
+
+  - id: cmd.deny_pipe_to_shell
+    tools: [run_command]
+    match: {pipe_to: [sh, bash, zsh, dash, ksh, mksh, fish, ash, csh, tcsh]}
+    decision: deny
+    risk: critical
+    reason: Piping output into a shell runs unseen code, so it is blocked.
+
+  - id: cmd.deny_base64_redirect
+    tools: [run_command]
+    match: {program_with_redirect: [base64]}
+    decision: deny
+    risk: high
+    reason: Using base64 with a redirect can hide or smuggle data, so it is blocked.
+
+  - id: cmd.deny_chmod_777
+    tools: [run_command]
+    match: {chmod_world_writable: true}
+    decision: deny
+    risk: high
+    reason: Making files writable by everyone is blocked.
+
+  - id: cmd.deny_rm_outside_workspace
+    tools: [run_command]
+    match: {delete_outside_workspace: true}
+    decision: deny
+    risk: critical
+    reason: Deleting outside the workspace, or the workspace itself, is blocked.
+
+  - id: cmd.deny_secret_paths
+    tools: [run_command]
+    match: {secret_reference: true}
+    decision: deny
+    risk: critical
+    reason: Commands may not name secret files (keys, credentials, .env).
+
+  - id: cmd.deny_paths_outside_workspace
+    tools: [run_command]
+    match: {arg_outside_workspace: true}
+    decision: deny
+    risk: high
+    reason: Commands may only use paths inside the workspace.
+
+  - id: ask.bulk_delete
+    tools: [run_command]
+    match: {bulk_delete: 3}
+    decision: ask
+    risk: medium
+    reason: Deleting many files, whole folders or wildcard matches needs a human's approval.
+
+  - id: cmd.allow_pip_requirements
+    tools: [run_command]
+    match:
+      exact_command:
+        - pip install -r requirements.txt
+        - pip3 install -r requirements.txt
+        - python -m pip install -r requirements.txt
+        - python3 -m pip install -r requirements.txt
+    decision: allow
+    risk: medium
+    reason: Installing the project's pinned requirements is allowed.
+
+  - id: cmd.deny_package_install
+    tools: [run_command]
+    match: {package_install: true}
+    decision: deny
+    risk: high
+    reason: Installing packages other than the pinned requirements is blocked.
+
+  - id: cmd.allow_safe
+    tools: [run_command]
+    match: {all_programs_in: [python, pytest, ls, cat]}
+    decision: allow
+    risk: low
+    reason: Running python, pytest, ls and cat in the sandbox is allowed.
+
+  - id: ask.unclassified_command
+    tools: [run_command]
+    match: {always: true}
+    decision: ask
+    risk: medium
+    reason: This command is not on the allowed list, so a human must approve it.
+
+  # --- Web fetch (http_get) ---
+  - id: net.deny_scheme
+    tools: [http_get]
+    match: {url_scheme_not_in: [http, https]}
+    decision: deny
+    risk: high
+    reason: Only http and https addresses can be fetched.
+
+  - id: net.allow_hosts
+    tools: [http_get]
+    match: {url_host_in: [pypi.org, docs.python.org]}
+    decision: allow
+    risk: low
+    reason: Reading documentation from an allowed site is allowed.
+
+  - id: net.default_deny
+    tools: [http_get]
+    match: {always: true}
+    decision: deny
+    risk: high
+    reason: Fetching from this site is not allowed.
+
+  # --- Control ---
+  - id: tool.allow_rollback
+    tools: [rollback]
+    match: {always: true}
+    decision: allow
+    risk: low
+    reason: Restoring an earlier checkpoint of this run is allowed.
+
+  - id: tool.allow_finish
+    tools: [finish]
+    match: {always: true}
+    decision: allow
+    risk: low
+    reason: Finishing the run is allowed.

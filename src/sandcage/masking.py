@@ -222,9 +222,28 @@ def mask_value(value: JsonValue) -> JsonValue:
     return value
 
 
-def contains_placeholder(text: str) -> bool:
-    """True when ``text`` holds a masking placeholder."""
-    return PLACEHOLDER_PATTERN.search(text) is not None
+def secret_values(text: str, *, min_assigned_length: int = 8) -> set[str]:
+    """Every secret in ``text`` as written: token formats, bearer tokens, private-key
+    blocks and string literals of at least ``min_assigned_length`` characters assigned to
+    secret-named variables. Emails and env values are not counted. Used by the diff guard,
+    so reading and writing agree on what a secret is."""
+    found = {match.group(0) for match in PRIVATE_KEY_BLOCK.finditer(text)}
+    for _kind, pattern in TOKEN_PATTERNS:
+        found |= {match.group(0) for match in pattern.finditer(text)}
+    found |= {match.group(0) for match in BEARER.finditer(text)}
+    for match in _QUOTED_ASSIGNMENT.finditer(text):
+        value = match.group("dq") if match.group("dq") is not None else match.group("sq")
+        if (
+            is_secret_name(match.group("name"))
+            and len(value) >= min_assigned_length
+            and not _is_placeholder(value)
+        ):
+            found.add(value)
+    return found
+
+
+def count_placeholders(text: str) -> int:
+    return len(PLACEHOLDER_PATTERN.findall(text))
 
 
 def _is_placeholder(value: str) -> bool:
