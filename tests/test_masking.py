@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -14,6 +16,7 @@ from sandcage.masking import (
     mask,
     mask_value,
     placeholder,
+    secret_values,
 )
 from tests.secrets_fixtures import (
     ALNUM,
@@ -334,3 +337,20 @@ def test_mask_is_idempotent_and_total(text: str) -> None:
     assert mask(once) == once
     env_once = mask(text, source=".env")
     assert mask(env_once, source=".env") == env_once
+
+
+# --- cost ------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["a" * 200_000, "a." * 100_000, '"a' * 100_000, "x-y_z." * 33_000],
+    ids=["word", "dotted", "quotes", "mixed"],
+)
+def test_masking_is_linear_on_long_unbroken_input(text: str) -> None:
+    # A planted minified file is one long line. Quadratic matching took about 40 s for
+    # 50 KB; linear matching takes milliseconds, so this bound cannot flake.
+    start = time.perf_counter()
+    mask(text)
+    secret_values(text)
+    assert time.perf_counter() - start < 2.0

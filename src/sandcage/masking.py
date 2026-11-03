@@ -93,8 +93,10 @@ _ENV_LINE: Final = re.compile(
 )
 
 # NAME <op> "value" anywhere: keyword arguments, dict and JSON entries, assignments.
+# The lookbehind makes a name start only where a run of name characters starts; without
+# it, one long unbroken word costs quadratic time (a planted minified file could stall us).
 _QUOTED_ASSIGNMENT: Final = re.compile(
-    r"(?P<lead>[\"']?)(?P<name>[A-Za-z_][A-Za-z0-9_.-]*)(?P=lead)"
+    r"(?P<lead>[\"']?)(?<![A-Za-z0-9_.-])(?P<name>[A-Za-z_][A-Za-z0-9_.-]*)(?P=lead)"
     r"(?P<sep>[ \t]*(?::=|=>|==|=|:)[ \t]*)"
     r"(?:\"(?P<dq>[^\"\n]*)\"|'(?P<sq>[^'\n]*)')"
 )
