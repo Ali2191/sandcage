@@ -192,6 +192,8 @@ ENGINE_CASES: dict[str, list[object]] = {
         run("grep -rn todo invoice_calc"),
         run("timeout 30 pytest"),
         run("rm notes.txt"),
+        run("rm a.txt b.txt c.txt"),
+        run("base64 data.bin"),
         run("echo hello"),
         run("pip list"),
         run("bash setup.sh"),
