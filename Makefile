@@ -13,7 +13,7 @@ test:
 	uv run --locked pytest
 
 env-check:
-	./scripts/check-env-files.sh
+	./scripts/check-tracked-secrets.sh
 
 fmt:
 	uv run --locked ruff check --fix .
