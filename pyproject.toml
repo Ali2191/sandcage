@@ -26,6 +26,8 @@ packages = ["src/sandcage"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# The demo repo is target code for the agent (with a deliberate bug), not ours to lint.
+extend-exclude = ["demo-repos"]
 
 [tool.ruff.lint]
 select = [
