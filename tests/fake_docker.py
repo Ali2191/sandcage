@@ -29,6 +29,7 @@ class Script:
     output: list[bytes] = field(default_factory=list)
     exit_code: int | None = 0
     hold_open: bool = False  # the stream stays open until a kill-all (or close)
+    runs_for: float = 0.0  # the command ends by itself this long after it started
     stale_inspects: int = 0  # exec_inspect says "running" this many times after the end
     killed_exit_code: int = 137
 
@@ -44,6 +45,7 @@ class FakeExec:
     finished: bool = False
     killed: bool = False
     inspects: int = 0
+    started_at: float = 0.0
 
     @property
     def exit_code(self) -> int | None:
@@ -59,6 +61,11 @@ class FakeStream:
     def __iter__(self) -> Iterator[bytes]:
         try:
             yield from self._record.script.output
+            ends_at = self._record.started_at + self._record.script.runs_for
+            while (left := ends_at - time.monotonic()) > 0:
+                if self._record.released.wait(left):
+                    self._record.killed = True
+                    return
             if self._record.script.hold_open:
                 while not self._record.released.wait(0.01):
                     if self.closed:
@@ -191,6 +198,7 @@ class FakeDocker:
     def exec_start(self, exec_id: str, *, timeout: float) -> FakeStream:
         self._enter("exec_start")
         record = self.execs[exec_id]
+        record.started_at = time.monotonic()
         if KILL_ALL in " ".join(record.command):
             for other in self.execs.values():
                 if other.container_id == record.container_id and not other.finished:
