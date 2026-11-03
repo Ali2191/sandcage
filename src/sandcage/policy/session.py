@@ -108,6 +108,15 @@ class PolicySession:
         self._trail.append(decision)
         return decision
 
+    def preview(self, raw: object) -> PolicyDecision:
+        """The verdict of the rulebook, the layers and the diff guard on an action, without
+        recording it or touching taint. The fetcher uses it to re-check every redirect hop
+        of a fetch the session already allowed, against the same (possibly locked) policy."""
+        action = parse_action(raw)
+        if isinstance(action, InvalidAction):
+            return PolicyDecision.from_hits([invalid_hit(action)])
+        return PolicyDecision.from_hits(self._hits(self._engine.subject(action)))
+
     # --- decision ------------------------------------------------------------------
 
     def _hits(self, subject: Subject) -> list[RuleHit]:
