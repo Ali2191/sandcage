@@ -141,8 +141,15 @@ def test_exec_into_a_container_that_is_not_a_sandbox_is_refused(
     through: tuple[EngineClient, Running], direct: EngineClient
 ) -> None:
     client, _ = through
+    # The same image, but created directly and without the sandbox label: the proxy must
+    # judge the label, not the image.
     plain = direct.create_container(
-        {"Image": "alpine:3.20", "Cmd": ["sleep", "60"], "Labels": {"purpose": "proxy-test"}}
+        {
+            "Image": "sandcage-sandbox:latest",
+            "Cmd": ["sleep", "60"],
+            "Labels": {"purpose": "proxy-test"},
+            "HostConfig": {"NetworkMode": "none"},
+        }
     )
     try:
         direct.start_container(plain)
