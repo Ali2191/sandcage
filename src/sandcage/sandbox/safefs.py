@@ -279,9 +279,12 @@ def try_read(root: Path, path: str, *, limit: int) -> bytes | None:
     return data
 
 
-def write_bytes(root: Path, path: str, data: bytes, *, replace_links: bool = False) -> int:
+def write_bytes(
+    root: Path, path: str, data: bytes, *, replace_links: bool = False, mode: int | None = None
+) -> int:
     """Write a regular file, creating missing directories. A link at the target is refused
-    (or, with ``replace_links``, removed and replaced by a file; its target is untouched)."""
+    (or, with ``replace_links``, removed and replaced by a file; its target is untouched).
+    The file keeps its mode (or takes ``mode``), always with read/write for everyone."""
     parts = parts_of(path)
     shown = _shown(parts)
     with directory(root, parts[:-1], create=True) as parent:
@@ -296,7 +299,8 @@ def write_bytes(root: Path, path: str, data: bytes, *, replace_links: bool = Fal
             while view:
                 written = os.write(fd, view)
                 view = view[written:]
-            os.fchmod(fd, stat.S_IMODE(info.st_mode) | FILE_MODE)
+            kept = stat.S_IMODE(info.st_mode) if mode is None else stat.S_IMODE(mode)
+            os.fchmod(fd, kept | FILE_MODE)
         finally:
             os.close(fd)
     return len(data)
