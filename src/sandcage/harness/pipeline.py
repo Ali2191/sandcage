@@ -181,6 +181,7 @@ class RunContext:
     learned: LearnEvent | None = None
     run_reader: QuarantinedReader | None = None
     error: str | None = None
+    current: Phase | None = None  # the phase of the stage running now
     _emit_lock: threading.Lock = field(default_factory=threading.Lock)
     _rewind_lock: threading.Lock = field(default_factory=threading.Lock)
     _rewind: int | None = None
@@ -798,6 +799,12 @@ class Harness:
     def stopped(self) -> bool:
         return self.guards.stopped
 
+    @property
+    def acting(self) -> bool:
+        """The agent is working (acting or answering the verifier), so a human rewind can
+        still be applied before its next model call."""
+        return not self.stopped and self.ctx.current in {Phase.ACT, Phase.VERIFY}
+
     # --- the run -------------------------------------------------------------------------------
 
     def execute(self) -> HarnessResult:
@@ -858,6 +865,7 @@ class Harness:
         return status
 
     def _safely(self, stage: Stage) -> RunStatus | None:
+        self.ctx.current = stage.phase
         try:
             return stage.run(self.ctx)
         except Exception as problem:  # noqa: BLE001 - spec: any failure ends the run as error
