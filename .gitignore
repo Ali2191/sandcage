@@ -21,3 +21,6 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Live smoke output (real model runs, never committed)
+live-runs/

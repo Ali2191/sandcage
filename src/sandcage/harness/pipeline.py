@@ -156,7 +156,7 @@ class RunContext:
     options: RunOptions
     guards: Guards
     checkpoints: Checkpoints
-    sink: Callable[[Event], None]
+    sink: Callable[[Event], object]
     human: Human
     clock: Callable[[], float] = time.time
     events: list[Event] = field(default_factory=list)
@@ -717,7 +717,7 @@ class Harness:
         checkpoints: Checkpoints,
         reader: QuarantinedReader | None = None,
         human: Human = nobody,
-        sink: Callable[[Event], None] = lambda _event: None,
+        sink: Callable[[Event], object] = lambda _event: None,
         save_outputs: Callable[[Outputs], None] | None = None,
         clock: Callable[[], float] = time.time,
         guards: Guards | None = None,
