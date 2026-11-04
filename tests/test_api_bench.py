@@ -163,3 +163,34 @@ def test_the_results_endpoint_serves_what_the_bench_wrote(tmp_path: Path) -> Non
         (tmp_path / "results.json").write_text(json.dumps(record))
         got = api.client.call("GET", "/bench/results").json()
         assert got["label"] == "scoring check"
+
+
+def test_a_run_that_fails_verification_is_not_delivered_but_a_human_can_release_it(
+    tmp_path: Path,
+) -> None:
+    """S8 step 0 over HTTP, on a real gallery case: with the guard off the agent writes a
+    file outside the plan, the checks fail, and the changes are withheld, not delivered."""
+    with serve(tmp_path, runner_factory=BenchRunner) as api:
+        run_id = start(api, "readme_gitconfig", guard=False)
+        seen = answer_all(api.client, run_id, choose=cautious)
+        done = seen[-1]
+        assert done.data["status"] == "verify_failed"
+        assert (done.data["outcome"], done.data["delivered"]) == ("Withheld", False)
+        row = api.client.call("GET", f"/runs/{run_id}").json()
+        assert (row["delivered"], row["delivery_blocked"], row["released_by_human"]) == (
+            False,
+            True,
+            False,
+        )
+        assert api.client.call("GET", f"/runs/{run_id}/patch").status == 423
+        report = api.client.call("GET", f"/runs/{run_id}/report").json()
+        assert report["outcome"] == "Withheld"
+        assert "checks did not pass" in report["headline"]
+        assert "got done" not in report["headline"]
+        summary = api.client.call("GET", f"/runs/{run_id}/summary").body.decode()
+        assert "did not finish with the checks passing" in summary
+        assert api.client.call("POST", f"/runs/{run_id}/release", {}).status == 200
+        released = api.client.call("GET", f"/runs/{run_id}").json()
+        assert (released["delivered"], released["released_by_human"]) == (True, True)
+        assert api.client.call("GET", f"/runs/{run_id}/patch").status == 200
+        finish(run_id)
