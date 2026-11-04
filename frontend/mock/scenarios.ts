@@ -9,6 +9,7 @@ import path from "node:path";
 import type { Event, Plan, RedteamFinding } from "../../contract/events.ts";
 import { approval, budget, choice, DENY_CHOICES, doneDraft, plan, step, type Draft } from "./builders.ts";
 import type { MockRun } from "./run.ts";
+import { declinedLine, reportRow } from "./wording.ts";
 
 export const SCENARIO_IDS = ["demo", "sneaky_urllib", "skip_test", "rollback", "clarify"] as const;
 export type ScenarioId = (typeof SCENARIO_IDS)[number];
@@ -248,6 +249,11 @@ async function tail(run: MockRun, o: TailOptions): Promise<void> {
     phase: "report",
     trifecta: { private_data: false, untrusted_content: false, way_out: false, all_at_once: false },
     blocks: o.blocked,
+    declined: 0,
+    outcome: reportRow("finished", o.blocked, withheld).outcome,
+    headline: reportRow("finished", o.blocked, withheld).headline,
+    declined_line: declinedLine(0),
+    egress: [],
     capabilities: [
       { capability: "read files", attempted: 3, executed: 3, blocked: 0 },
       { capability: "write files", attempted: 1 + o.blocked, executed: 1, blocked: o.blocked },

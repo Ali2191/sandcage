@@ -14,6 +14,7 @@ import type {
   Plan,
   StepEvent,
 } from "../../contract/events.ts";
+import { reportRow } from "./wording.ts";
 
 export type Draft<E extends Event> = E extends Event ? Omit<E, "id" | "run_id" | "ts" | "budget"> & { budget?: Budget | null } : never;
 
@@ -167,8 +168,10 @@ export const DENY_CHOICES = (approveLabel: string, approveId = "allow"): Choice[
 ];
 
 export function doneDraft(base: Partial<DoneEvent> & Pick<DoneEvent, "status" | "summary">): Draft<DoneEvent> {
+  const withheld = (base.delivery_blocked ?? false) && !(base.released_by_human ?? false);
   return {
     kind: "done",
+    outcome: reportRow(base.status, 0, withheld).outcome,
     phase: "learn",
     budget: null,
     steps: 0,

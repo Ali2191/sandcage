@@ -1,0 +1,862 @@
+{
+ "declined": [
+  {
+   "declined": 0,
+   "declined_line": null
+  },
+  {
+   "declined": 1,
+   "declined_line": "You did not approve 1 request, so it did not run."
+  },
+  {
+   "declined": 2,
+   "declined_line": "You did not approve 2 requests, so they did not run."
+  },
+  {
+   "declined": 3,
+   "declined_line": "You did not approve 3 requests, so they did not run."
+  }
+ ],
+ "reports": [
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "running",
+   "status": "running",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "running",
+   "status": "running",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "running",
+   "status": "running",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "running",
+   "status": "running",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "running",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "running",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "running",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "running",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, and the task got done.",
+   "outcome": "Delivered",
+   "status": "finished",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the task still got done.",
+   "outcome": "Delivered",
+   "status": "finished",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the task still got done.",
+   "outcome": "Delivered",
+   "status": "finished",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the task still got done.",
+   "outcome": "Delivered",
+   "status": "finished",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "finished",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "finished",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "finished",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "finished",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "verify_failed",
+   "status": "verify_failed",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "verify_failed",
+   "status": "verify_failed",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "verify_failed",
+   "status": "verify_failed",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "verify_failed",
+   "status": "verify_failed",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "verify_failed",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "verify_failed",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "verify_failed",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "verify_failed",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "needs_clarification",
+   "status": "needs_clarification",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "needs_clarification",
+   "status": "needs_clarification",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "needs_clarification",
+   "status": "needs_clarification",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "needs_clarification",
+   "status": "needs_clarification",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "needs_clarification",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "needs_clarification",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "needs_clarification",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "needs_clarification",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "plan_invalid",
+   "status": "plan_invalid",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "plan_invalid",
+   "status": "plan_invalid",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "plan_invalid",
+   "status": "plan_invalid",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "plan_invalid",
+   "status": "plan_invalid",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_invalid",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_invalid",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_invalid",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_invalid",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "plan_rejected",
+   "status": "plan_rejected",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "plan_rejected",
+   "status": "plan_rejected",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "plan_rejected",
+   "status": "plan_rejected",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "plan_rejected",
+   "status": "plan_rejected",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_rejected",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_rejected",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_rejected",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "plan_rejected",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "budget.steps",
+   "status": "budget.steps",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "budget.steps",
+   "status": "budget.steps",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "budget.steps",
+   "status": "budget.steps",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "budget.steps",
+   "status": "budget.steps",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.steps",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.steps",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.steps",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.steps",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "budget.tokens",
+   "status": "budget.tokens",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "budget.tokens",
+   "status": "budget.tokens",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "budget.tokens",
+   "status": "budget.tokens",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "budget.tokens",
+   "status": "budget.tokens",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.tokens",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.tokens",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.tokens",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.tokens",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "budget.time",
+   "status": "budget.time",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "budget.time",
+   "status": "budget.time",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "budget.time",
+   "status": "budget.time",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "budget.time",
+   "status": "budget.time",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.time",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.time",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.time",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "budget.time",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "loop.repeat",
+   "status": "loop.repeat",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "loop.repeat",
+   "status": "loop.repeat",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "loop.repeat",
+   "status": "loop.repeat",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "loop.repeat",
+   "status": "loop.repeat",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "loop.repeat",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "loop.repeat",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "loop.repeat",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "loop.repeat",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "killed",
+   "status": "killed",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "killed",
+   "status": "killed",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "killed",
+   "status": "killed",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "killed",
+   "status": "killed",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "killed",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "killed",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "killed",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "killed",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "invalid_reply",
+   "status": "invalid_reply",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "invalid_reply",
+   "status": "invalid_reply",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "invalid_reply",
+   "status": "invalid_reply",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "invalid_reply",
+   "status": "invalid_reply",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "invalid_reply",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "invalid_reply",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "invalid_reply",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "invalid_reply",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "error",
+   "status": "error",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "error",
+   "status": "error",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "error",
+   "status": "error",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "error",
+   "status": "error",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "error",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "error",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "error",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "error",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "You stopped this run. Nothing left the cage.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "You stopped this run. Before that, Sandcage blocked it once.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "You stopped this run. Before that, Sandcage blocked it 2 times.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "You stopped this run. Before that, Sandcage blocked it 3 times.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "You stopped this run. Nothing left the cage.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "You stopped this run. Before that, Sandcage blocked it once.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "You stopped this run. Before that, Sandcage blocked it 2 times.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "You stopped this run. Before that, Sandcage blocked it 3 times.",
+   "outcome": "Stopped by you",
+   "status": "stopped",
+   "withheld": true
+  },
+  {
+   "blocked": 0,
+   "headline": "The run ended before the task was done.",
+   "outcome": "interrupted",
+   "status": "interrupted",
+   "withheld": false
+  },
+  {
+   "blocked": 1,
+   "headline": "Sandcage blocked the agent once. The run ended before the task was done.",
+   "outcome": "interrupted",
+   "status": "interrupted",
+   "withheld": false
+  },
+  {
+   "blocked": 2,
+   "headline": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+   "outcome": "interrupted",
+   "status": "interrupted",
+   "withheld": false
+  },
+  {
+   "blocked": 3,
+   "headline": "Sandcage blocked the agent 3 times. The run ended before the task was done.",
+   "outcome": "interrupted",
+   "status": "interrupted",
+   "withheld": false
+  },
+  {
+   "blocked": 0,
+   "headline": "The run finished inside the cage, but the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "interrupted",
+   "withheld": true
+  },
+  {
+   "blocked": 1,
+   "headline": "The agent tried to cross the line. Sandcage blocked it once, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "interrupted",
+   "withheld": true
+  },
+  {
+   "blocked": 2,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 2 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "interrupted",
+   "withheld": true
+  },
+  {
+   "blocked": 3,
+   "headline": "The agent tried to cross the line. Sandcage blocked it 3 times, and the patch is withheld until you review it.",
+   "outcome": "Withheld",
+   "status": "interrupted",
+   "withheld": true
+  }
+ ]
+}

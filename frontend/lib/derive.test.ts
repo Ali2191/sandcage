@@ -47,7 +47,7 @@ describe("pendingApproval", () => {
     const p = pendingApproval(upTo(4));
     expect(p?.approval.kind).toBe("plan");
     expect(p?.approval.id).toBe("plan:0");
-    expect(p?.deadlineMs).toBe(Math.round((1793000006.7 + 120) * 1000));
+    expect(p?.deadlineMs).toBe(Math.round((1793000002.25 + 120) * 1000));
   });
 
   it("is cleared by the matching approval_resolved", () => {
@@ -320,7 +320,7 @@ describe("report data", () => {
     const t = trifecta(SAMPLE);
     expect(t).not.toBeNull();
     expect(trifectaLegs(t as NonNullable<typeof t>, reportEvent(SAMPLE))).toEqual({
-      privateData: "present",
+      privateData: "absent",
       untrustedContent: "present",
       wayOut: "blocked",
       allAtOnce: false,
@@ -340,7 +340,7 @@ describe("report data", () => {
     const budget = latestBudget(SAMPLE);
     expect(budget?.tokens_reported).toBe(false);
     expect(measuredTokens(budget)).toBeNull();
-    expect(measuredTokens(budget && { ...budget, tokens_reported: true })).toBe(8100);
+    expect(measuredTokens(budget && { ...budget, tokens_reported: true })).toBe(13107);
     expect(measuredTokens(null)).toBeNull();
   });
 
