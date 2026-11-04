@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import time
 from dataclasses import dataclass, field
 
 import pytest
@@ -55,6 +56,29 @@ def test_parse_action_defaults_and_errors() -> None:
     with pytest.raises(ActionParseError, match="longer than"):
         parse_action("{" + " " * 200_001 + "}")
     assert len(parse_action(json.dumps({"tool": "finish", "reason": "r" * 900})).reason) == 500
+
+
+def test_deep_nesting_is_an_invalid_reply_not_a_crash() -> None:
+    """Found by the scout's hostile-reply test (S4): raw_decode raised RecursionError."""
+    for text in ("{" * 10_000, '{"a": ' + "[" * 5000 + "]}", '{"a": ' + '{"b": ' * 3000):
+        with pytest.raises(ActionParseError):
+            extract_json_object(text)
+        with pytest.raises(ActionParseError):
+            parse_action(text)
+        assert last_action_object(text) is None
+    with pytest.raises(ActionParseError):  # fail closed: nothing after hostile nesting counts
+        parse_action("{" * 5000 + ' {"tool": "finish"}')
+
+
+def test_hostile_nesting_is_rejected_fast() -> None:
+    """200 000 characters of '{' took 20 s: every failed raw_decode builds a
+    JSONDecodeError that counts newlines up to its position, so trying each '{' was
+    quadratic. Failed starts are now capped."""
+    started = time.perf_counter()
+    for text in ("{" * 199_000, '{"a":' * 39_000):
+        with pytest.raises(ActionParseError):
+            extract_json_object(text)
+    assert time.perf_counter() - started < 2.0
 
 
 def test_last_action_object_prefers_the_last_tool_object() -> None:

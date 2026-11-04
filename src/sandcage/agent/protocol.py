@@ -27,6 +27,7 @@ TOOLS: Final = (
 )
 MAX_REPLY_CHARS: Final = 200_000
 REASON_LIMIT: Final = 500
+MAX_FAILED_STARTS: Final = 1000  # "{" positions that did not start an object
 
 
 class ActionParseError(ValueError):
@@ -47,13 +48,19 @@ class AgentAction:
 def _objects(text: str) -> Iterator[dict[str, JsonValue]]:
     """Every JSON object in ``text``, in order (markdown fences and prose are skipped)."""
     decoder = json.JSONDecoder()
+    failures = 0
     index = text.find("{")
     while index != -1:
         try:
             value, end = decoder.raw_decode(text, index)
         except json.JSONDecodeError:
+            failures += 1
+            if failures > MAX_FAILED_STARTS:
+                return  # each failure costs O(position); stop before it turns quadratic
             index = text.find("{", index + 1)
             continue
+        except RecursionError:
+            return  # hostile nesting: give up (no object found)
         if isinstance(value, dict):
             yield value
             index = text.find("{", end)
