@@ -403,7 +403,10 @@ export interface RedteamFinding {
 
 /**
  * ``outcome`` is the solid pill and ``headline`` the report's first line, both written
- * by the backend; a withheld patch reads "Withheld", never "Delivered".
+ * by the backend; a withheld patch reads "Withheld", never "Delivered". ``blocks`` counts
+ * gate denials only; ``declined`` counts asks a human did not approve (refused or timed
+ * out), described by ``declined_line`` (null when there were none). A declined ask is
+ * never counted as the agent crossing the line.
  */
 export interface ReportEvent {
   id: number;
@@ -414,9 +417,11 @@ export interface ReportEvent {
   kind: "report";
   trifecta: Trifecta;
   blocks: number;
+  declined: number;
   capabilities: CapabilityCount[];
   outcome: string;
   headline: string;
+  declined_line: string | null;
   egress: EgressRecord[];
 }
 

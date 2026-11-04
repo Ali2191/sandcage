@@ -1910,7 +1910,7 @@
       "type": "object"
     },
     "ReportEvent": {
-      "description": "``outcome`` is the solid pill and ``headline`` the report's first line, both written\nby the backend; a withheld patch reads \"Withheld\", never \"Delivered\".",
+      "description": "``outcome`` is the solid pill and ``headline`` the report's first line, both written\nby the backend; a withheld patch reads \"Withheld\", never \"Delivered\". ``blocks`` counts\ngate denials only; ``declined`` counts asks a human did not approve (refused or timed\nout), described by ``declined_line`` (null when there were none). A declined ask is\nnever counted as the agent crossing the line.",
       "properties": {
         "blocks": {
           "title": "Blocks",
@@ -1933,6 +1933,23 @@
           },
           "title": "Capabilities",
           "type": "array"
+        },
+        "declined": {
+          "default": 0,
+          "title": "Declined",
+          "type": "integer"
+        },
+        "declined_line": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Declined Line"
         },
         "egress": {
           "items": {
@@ -1986,9 +2003,11 @@
         "kind",
         "trifecta",
         "blocks",
+        "declined",
         "capabilities",
         "outcome",
         "headline",
+        "declined_line",
         "egress"
       ],
       "title": "ReportEvent",

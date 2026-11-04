@@ -18,7 +18,15 @@ from typing import Final
 from sandcage.contract.common import Phase
 from sandcage.contract.events import DeliverEvent, ExcludedFile, VerifyCheck
 from sandcage.masking import mask
-from sandcage.report.report import ReportInput, headline, md_text, outcome
+from sandcage.report.report import (
+    ReportInput,
+    declined_line,
+    headline,
+    is_declined,
+    is_denied,
+    md_text,
+    outcome,
+)
 from sandcage.sandbox.diff import WorkspaceDiff, file_section
 
 PATCH_NAME: Final = "sandcage.patch"
@@ -92,7 +100,8 @@ def summary_markdown(
 ) -> str:
     """SUMMARY.md for people. Every untrusted string is cleaned (masked, one line, no HTML,
     no code fences); the agent's own summary is labelled an unverified claim."""
-    blocks = [e for e in source.steps if e.blocked and not e.observed]
+    blocks = [e for e in source.steps if is_denied(e)]
+    declined = declined_line(sum(1 for e in source.steps if is_declined(e)))
     pill = outcome(source.status, withheld=source.withheld)
     lines = [
         "# Sandcage summary",
@@ -100,6 +109,8 @@ def summary_markdown(
         f"**{pill}.** {headline(source.status, len(blocks), withheld=source.withheld)}",
         "",
     ]
+    if declined:
+        lines += [declined, ""]
     if source.withheld:
         lines += [
             "> **The patch is withheld.** The red-team found a high-severity issue or could not "

@@ -6,7 +6,12 @@
   that can send data out (a web fetch or a network command). The report states whether all
   three ever met, and at which steps.
 - **Capabilities**: read / write / command / network / control, attempted vs executed vs
-  blocked, with targets. "Blocked" = denied, or asked and not approved.
+  blocked, with targets. Here "blocked" means "did not run": denied, or asked and not
+  approved.
+- **Blocks vs declined**: only a *gate denial* counts as the agent trying to cross the
+  line. An action the gate asked about and a human did not approve (a refusal or a timeout)
+  is not an attack; it is reported on its own line ("You did not approve 2 requests, so
+  they did not run.") and never inside the blocked count.
 - **Egress** is measured from the fetcher's per-hop record (``run.egress``): host,
   resolved address, status and bytes received for every request actually made. A network
   attempt that was blocked appears with ``requests: 0``, because no request left.
@@ -39,6 +44,7 @@ from sandcage.contract.events import (
 )
 from sandcage.contract.wording import target_hosts
 from sandcage.masking import mask
+from sandcage.policy import Decision
 from sandcage.sandbox.fetcher import Hop
 
 INJECTION_TAG: Final = "prompt_injection_suspected"
@@ -75,7 +81,8 @@ def outcome(status: RunStatus, *, withheld: bool) -> str:
 
 
 def headline(status: RunStatus, blocked: int, *, withheld: bool) -> str:
-    """The report headline (PAGES.md section 5, plus the withheld case)."""
+    """The report headline (PAGES.md section 5, plus the withheld case). ``blocked`` counts
+    gate denials only (:func:`is_denied`); asks a human did not approve never count."""
     if status is RunStatus.STOPPED:
         if blocked:
             return f"You stopped this run. Before that, Sandcage blocked it {times(blocked)}."
@@ -105,7 +112,27 @@ def headline(status: RunStatus, blocked: int, *, withheld: bool) -> str:
 
 
 def is_blocked(event: StepEvent) -> bool:
+    """The step did not run: denied, or asked and not approved (observe mode ran it)."""
     return event.blocked and not event.observed
+
+
+def is_denied(event: StepEvent) -> bool:
+    """A real gate denial: the agent tried something the rules forbid."""
+    return is_blocked(event) and event.decision is Decision.DENY
+
+
+def is_declined(event: StepEvent) -> bool:
+    """An ask a human did not approve (refused, timed out or errored). Not an attack."""
+    return is_blocked(event) and event.decision is Decision.ASK
+
+
+def declined_line(declined: int) -> str | None:
+    """The honest line for refused asks, kept apart from the headline's blocked count."""
+    if not declined:
+        return None
+    noun = "request" if declined == 1 else "requests"
+    pronoun = "it" if declined == 1 else "they"
+    return f"You did not approve {declined} {noun}, so {pronoun} did not run."
 
 
 def is_network(event: StepEvent) -> bool:
@@ -267,12 +294,14 @@ class Report:
 
 def build_report(source: ReportInput, ts: float) -> Report:
     steps = list(source.steps)
-    blocks = [e for e in steps if is_blocked(e)]
+    blocks = [e for e in steps if is_denied(e)]
+    declined = [e for e in steps if is_declined(e)]
     status, legs, attempted = trifecta(steps, source.scout_flags)
     caps = capabilities(steps)
     exits = egress(steps, source.hops)
     pill = outcome(source.status, withheld=source.withheld)
     line = headline(source.status, len(blocks), withheld=source.withheld)
+    second = declined_line(len(declined))
     budget = source.budget
     reported = budget.tokens_reported if budget is not None else False
     data: dict[str, JsonValue] = {
@@ -282,6 +311,7 @@ def build_report(source: ReportInput, ts: float) -> Report:
         "status": source.status.value,
         "outcome": pill,
         "headline": line,
+        "declined_line": second,
         "guard": source.guard,
         "mode": "observe" if source.observe else "enforce",
         "model": source.model,
@@ -303,21 +333,8 @@ def build_report(source: ReportInput, ts: float) -> Report:
             for leg in legs
         ],
         "capabilities": [c.model_dump(mode="json") for c in caps],
-        "blocks": [
-            {
-                "step": e.step,
-                "tool": e.tool,
-                "target": target(e),
-                "decision": e.decision.value,
-                "approved": e.approved,
-                "rule_id": e.rule_id,
-                "sentence": e.blocked_sentence,
-                "matched_rules": [r.model_dump(mode="json") for r in e.matched_rules],
-                "taint_sources": list(e.taint_sources),
-                "tags": list(e.tags),
-            }
-            for e in blocks
-        ],
+        "blocks": [_block_row(e) for e in blocks],
+        "declined": [_block_row(e) for e in declined],
         "egress": [r.model_dump(mode="json") for r in exits],
         "verified": source.verified,
         "redteam": {
@@ -346,12 +363,31 @@ def build_report(source: ReportInput, ts: float) -> Report:
         budget=budget,
         trifecta=status,
         blocks=len(blocks),
+        declined=len(declined),
         capabilities=caps,
         outcome=pill,
         headline=line,
+        declined_line=second,
         egress=exits,
     )
-    return Report(data, report_markdown(source, data, status, blocks, exits), event)
+    return Report(
+        data, report_markdown(source, data, status, blocks, declined=declined, exits=exits), event
+    )
+
+
+def _block_row(e: StepEvent) -> dict[str, JsonValue]:
+    return {
+        "step": e.step,
+        "tool": e.tool,
+        "target": target(e),
+        "decision": e.decision.value,
+        "approved": e.approved,
+        "rule_id": e.rule_id,
+        "sentence": e.blocked_sentence,
+        "matched_rules": [r.model_dump(mode="json") for r in e.matched_rules],
+        "taint_sources": list(e.taint_sources),
+        "tags": list(e.tags),
+    }
 
 
 def report_markdown(
@@ -359,6 +395,8 @@ def report_markdown(
     data: dict[str, JsonValue],
     status: Trifecta,
     blocks: Sequence[StepEvent],
+    *,
+    declined: Sequence[StepEvent],
     exits: Sequence[EgressRecord],
 ) -> str:
     lines = [
@@ -366,6 +404,10 @@ def report_markdown(
         "",
         f"**{data['outcome']}.** {data['headline']}",
         "",
+    ]
+    if declined:
+        lines += [str(data["declined_line"]), ""]
+    lines += [
         f"- Run: `{source.run_id}` on {md_text(source.repo, 100)}",
         f"- Task: {md_text(source.brief, 500)}",
         f"- Status: {source.status.value}",
@@ -411,6 +453,13 @@ def report_markdown(
         lines.append(f"- Step {event.step}: {sentence} (rule {md_text(event.rule_id, 80)})")
     if not blocks:
         lines.append("- Nothing was blocked.")
+    if declined:
+        lines += ["", f"## Not approved ({len(declined)})", ""]
+    for event in declined:
+        sentence = md_text(event.blocked_sentence or event.tool)
+        lines.append(
+            f"- Step {event.step}: {sentence} (asked by rule {md_text(event.rule_id, 80)})"
+        )
     lines += ["", "## Egress (measured)", ""]
     if not exits:
         lines.append("- No network request was made or attempted. 0 bytes sent.")

@@ -333,14 +333,19 @@ class EgressRecord(ContractModel):
 
 class ReportEvent(EventBase):
     """``outcome`` is the solid pill and ``headline`` the report's first line, both written
-    by the backend; a withheld patch reads "Withheld", never "Delivered"."""
+    by the backend; a withheld patch reads "Withheld", never "Delivered". ``blocks`` counts
+    gate denials only; ``declined`` counts asks a human did not approve (refused or timed
+    out), described by ``declined_line`` (null when there were none). A declined ask is
+    never counted as the agent crossing the line."""
 
     kind: Literal["report"] = "report"
     trifecta: Trifecta
     blocks: int
+    declined: int = 0
     capabilities: list[CapabilityCount] = Field(default_factory=list)
     outcome: str = ""
     headline: str = ""
+    declined_line: str | None = None
     egress: list[EgressRecord] = Field(default_factory=list)
 
 
