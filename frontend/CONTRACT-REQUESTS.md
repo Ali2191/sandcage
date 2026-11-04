@@ -1,5 +1,12 @@
 # Contract requests from the panel (P1)
 
+> **Status after S7 (4 Nov): closed, kept as history.** S5 and S6 built A2, B1, B2, B5 to B7, C1,
+> C2, C6 and C7 (see `contract/API.md`), and the panel's adapters for them are gone: its types
+> follow API.md, `lib/api.ts` reads `{repos}`, `pending`, `result` and `server_time`, and the pill,
+> headline and declined line come from the report event. Still true: no cost anywhere (C3), the
+> Bench catalogue is empty until S8 (B3, B4), and the report event is written before a release,
+> so after one the panel words the release itself ("Released by you") from `released_by_human`.
+
 What the panel needs that `contract/` does not give it yet, why, and the exact event or
 field. Each item names the **adapter** the panel uses meanwhile; the adapter is marked in
 the code and lives in one place (`lib/api.ts` unless stated), so closing a request means

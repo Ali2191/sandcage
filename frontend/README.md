@@ -28,20 +28,57 @@ the Bench numbers it can return are labelled test data.
 Test controls (mock only): `POST /__mock/inject {target, mode: error|empty|slow|off}`,
 `/__mock/pause`, `/__mock/bench {kind: scripted|real|none}`, `/__mock/seed`, `/__mock/reset`.
 
-## Point it at the real API
+## Run it against the real API
 
-Change one value and rebuild: `NEXT_PUBLIC_API_URL=/api` (behind Caddy) or the API's URL.
-The only module that talks to the API is `lib/api.ts` (plus `lib/stream.ts` for events).
-What the real API must match is in `CONTRACT-REQUESTS.md`.
+```
+make dev                          # repo root: API on 127.0.0.1:8000 and the panel on 127.0.0.1:3000
+```
+
+`make dev` creates a git-ignored `.dev.env` (mode 600) with a random access code on the first
+run, and never prints it: read it from the file and type it into the Start form. Scripted models
+are the default (`LLM_PROVIDER` unset). The panel finds the API through `NEXT_PUBLIC_API_URL`
+(build time): `http://127.0.0.1:8000` in dev, `/api` behind Caddy. The API allows the panel's
+origin through `PANEL_ORIGIN`; behind Caddy both are one origin and it stays unset.
+
+The only module that talks to the API is `lib/api.ts` (plus `lib/stream.ts` for events). Its
+types follow `../contract/API.md`; event types come from `../contract/events.ts`. Every changing
+call carries the access code in `X-Access-Code`. The wording of the pill, the headline and the
+declined line is the backend's (`report.outcome`, `report.headline`, `report.declined_line`);
+a run without a report shows `done.outcome` and `done.summary`.
 
 ## Checks
 
 ```
 npm run check          # lint, typecheck, unit tests, production build   (make panel-check at the repo root)
-npm run e2e            # Playwright against the mock: one worker, no retries
+npm run e2e            # Playwright against the MOCK API: one worker, no retries
+npm run e2e:real       # Playwright against the REAL API (scripted models, host runner, no Docker)
 npm run screens        # writes screens/*.png (desktop 1440 and phone 390)
 npm run wording:verify -- "<vault>/Projects/Sandcage/Design/PAGES.md"
 ```
+
+`e2e:real` starts `tests/e2e_api.py` (the real HTTP server, event store, demo guard and run
+manager) on 127.0.0.1:8010 and a production build of the panel on 127.0.0.1:3010, with a random
+access code per run. It has one spec per scenario (each answers every approval kind it raises),
+Esc on the plan banner, reload at a question, the access code (missing, wrong, rate limited),
+CORS in a real browser (the panel and the API are different origins), and the 390 px spec. CI runs
+both suites in the `panel` job.
+
+The mock cannot drift unnoticed: `mock/contract-shape.test.ts` checks every event it serves against
+`../contract/events.schema.json` and every payload against the key lists in `API.md`, and its
+report and done wording is looked up in `../contract/samples/report-wording.json`, which the
+backend generates from its own functions.
+
+## One live run (real model, real Docker)
+
+```
+npm run e2e:live       # needs ~/.sandcage/vultr-demo.key (mode 600) and Docker
+```
+
+Starts the API through `scripts/api_with_key_file.py` (the key is read inside the API process
+only), drives the real Start form, approves the plan, denies every other question and writes
+screenshots and `findings.json` to `screens/real-run/`. Hard limits: 60 000 tokens for the run,
+100 000 for the day, two runs a day, `LLM_RETRIES=0` (the first provider error ends the run).
+It asserts nothing about what the model does. Run it once, on purpose: it spends real tokens.
 
 ## How it is built
 
