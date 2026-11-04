@@ -1,6 +1,6 @@
-.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker bench api panel-check dev
+.PHONY: check lint types test env-check shellcheck contract-check contract fmt sandbox-image test-docker bench api panel-check dev
 
-check: lint types test env-check contract-check
+check: lint types test env-check shellcheck contract-check
 
 lint:
 	uv run --locked ruff check .
@@ -14,6 +14,10 @@ test:
 
 env-check:
 	./scripts/check-tracked-secrets.sh
+
+# Shell scripts: the deploy script and scripts/*.sh (shellcheck on PATH, else its pinned image).
+shellcheck:
+	./scripts/shellcheck.sh
 
 # The typed event contract (contract/) is generated from src/sandcage/contract.
 contract:
