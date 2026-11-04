@@ -39,6 +39,7 @@ from sandcage.masking import mask
 from sandcage.policy import PolicyEngine
 from sandcage.sandbox.container import DockerSandbox, reap_orphaned_sandboxes
 from sandcage.sandbox.docker_api import DockerAPI, DockerError, EngineClient
+from sandcage.sandbox.hardening import IMAGE as SANDBOX_IMAGE
 from sandcage.sandbox.run import RunnerFactory
 from sandcage.sandbox.runtime import RuntimeConfigError, RuntimeSelector, requested_runtime
 
@@ -137,7 +138,7 @@ def build(
         guard=guard,
         manager=manager,
         engine=engine,
-        readiness=readiness(docker, selector, temp_root),
+        readiness=readiness(docker, selector, temp_root, store),
         runtime=runtime,
         bench_results_path=Path(
             env.get("SANDCAGE_BENCH_RESULTS", "") or "benchmarks/out/results.json"
@@ -147,8 +148,10 @@ def build(
 
 
 def readiness(
-    docker: DockerAPI, selector: RuntimeSelector, temp_root: Path
+    docker: DockerAPI, selector: RuntimeSelector, temp_root: Path, store: EventStore
 ) -> Callable[[], dict[str, dict[str, JsonValue]]]:
+    """What /readyz reports besides the provider and the demo guard (the app adds those)."""
+
     def checks() -> dict[str, dict[str, JsonValue]]:
         try:
             docker.ping()
@@ -157,7 +160,9 @@ def readiness(
             reachable = {"ok": False, "detail": "Docker is unreachable"}
         status = selector.status()
         return {
+            "store": store_check(store),
             "docker": reachable,
+            "image": image_check(docker),
             "runtime": {
                 "ok": status.active is not None,
                 "detail": status.reason,
@@ -169,6 +174,26 @@ def readiness(
         }
 
     return checks
+
+
+def store_check(store: EventStore) -> dict[str, JsonValue]:
+    try:
+        store.check_writable()
+    except StoreError as problem:
+        return {"ok": False, "detail": str(problem)}
+    return {"ok": True, "detail": "the event log is writable"}
+
+
+def image_check(docker: DockerAPI) -> dict[str, JsonValue]:
+    """The sandbox image is built on the host (the proxy refuses builds): a missing one means
+    no run can start, so the demo is not ready."""
+    try:
+        present = docker.image_exists(SANDBOX_IMAGE)
+    except DockerError:
+        return {"ok": False, "detail": "cannot check the sandbox image: Docker is unreachable"}
+    if present:
+        return {"ok": True, "detail": f"{SANDBOX_IMAGE} is present"}
+    return {"ok": False, "detail": f"{SANDBOX_IMAGE} is missing: build it on the host"}
 
 
 def serve(built: Built, host: str, port: int) -> Server:

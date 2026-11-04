@@ -45,7 +45,7 @@ from sandcage.api.errors import (
 )
 from sandcage.api.guard import DemoGuard, RefusalError
 from sandcage.api.runs import RunManager, StartRequest
-from sandcage.api.settings import HEARTBEAT_SECONDS, ApiSettings
+from sandcage.api.settings import HEARTBEAT_SECONDS, MIN_CODE_LENGTH, ApiSettings
 from sandcage.contract.events import (
     DecisionCounts,
     DoneEvent,
@@ -276,8 +276,23 @@ class App:
             "ok": provider.configured,
             "detail": provider.problem or f"{provider.provider} provider configured",
         }
+        checks["demo"] = self.demo_check()
         ready = all(bool(check.get("ok")) for check in checks.values())
         return Response.json({"ready": ready, "checks": checks}, 200 if ready else 503)
+
+    def demo_check(self) -> dict[str, JsonValue]:
+        """Public mode is only ready with an access code of 12+ characters (the API refuses to
+        start without one; this keeps /readyz honest if that ever changes). Never the code."""
+        demo = self.settings.demo
+        if not demo.public:
+            return {"ok": True, "detail": "local mode: no public access code is required"}
+        code = demo.access_code
+        if code is None or len(code) < MIN_CODE_LENGTH:
+            return {
+                "ok": False,
+                "detail": f"public mode needs an access code of {MIN_CODE_LENGTH}+ characters",
+            }
+        return {"ok": True, "detail": "public mode, access code configured"}
 
     def demo_status(self, request: Request, match: Mapping[str, str]) -> Response:
         status = self.guard.status(active_runs=len(self.manager.active_ids()))

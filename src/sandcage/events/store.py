@@ -231,6 +231,18 @@ class EventStore:
         with self._lock:
             self._db.close()
 
+    def check_writable(self) -> None:
+        """Raise :class:`StoreError` unless the log accepts a write right now: a write lock is
+        taken and given back, so nothing is stored."""
+        with self._lock:
+            try:
+                self._db.execute("BEGIN IMMEDIATE")
+            except sqlite3.Error as problem:
+                raise StoreError(
+                    f"the event log is not writable ({type(problem).__name__})"
+                ) from None
+            self._db.execute("ROLLBACK")
+
     # --- runs --------------------------------------------------------------------------
 
     def create_run(

@@ -27,7 +27,7 @@ Start it with `python -m sandcage.api` (or `make api`).
 | Route | Answer |
 |---|---|
 | `GET /healthz` | `{"ok": true}` |
-| `GET /readyz` | `200` or `503` with `{"ready": bool, "checks": {name: {"ok": bool, "detail": str, ...}}}`. Checks: `docker`, `runtime` (+ `active`: `"runsc"` / `"runc"` / `null`, `label`, `gvisor`), `disk` (+ `free_bytes`, needs 1 GiB), `provider`. |
+| `GET /readyz` | `200` or `503` with `{"ready": bool, "checks": {name: {"ok": bool, "detail": str, ...}}}`. Checks: `store` (the event log takes a write), `docker` (answers through the proxy), `image` (the sandbox image is present on the host), `runtime` (+ `active`: `"runsc"` / `"runc"` / `null`, `label`, `gvisor`; the runtime that new runs really get, never gVisor unless the probe saw its banner), `disk` (+ `free_bytes`, needs 1 GiB), `provider`, `demo` (public mode has an access code of 12+ characters; never the code). `GET /healthz` answers `{"ok": true}` whenever the process is up (containers and Caddy use it). |
 | `GET /demo/status` | `{access_required, public, paused, message (null unless paused), active_runs, max_concurrent, runs_today, runs_per_day, runs_left_today, runs_per_client_per_hour, tokens_today, daily_token_cap, run_token_cap, resets_at (unix s, next UTC midnight), sandbox_runtime: {requested, active, gvisor, label, reason} \| null, provider_ready}` |
 | `POST /demo/unlock` | `{"ok": true}` when the code is right (401/403/429 otherwise) |
 

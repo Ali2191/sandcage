@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from sandcage.api.app import Request, Response
-from sandcage.api.main import StartupError, build
+from sandcage.api.main import Built, StartupError, build
 from sandcage.events.store import EventStore
 from tests.agent_helpers import LocalRunner
 from tests.fake_docker import FakeDocker
@@ -116,4 +116,66 @@ def test_a_real_provider_without_a_key_serves_but_refuses_runs(tmp_path: Path) -
     )
     assert isinstance(started, Response)
     assert started.status == 503
+    built.lock.close()
+
+
+def _checks(built: Built) -> dict[str, dict[str, object]]:
+    ready = built.app.handle(Request("GET", "/readyz"))
+    assert isinstance(ready, Response)
+    body = ready.body.decode()
+    assert CODE not in body
+    found: dict[str, dict[str, object]] = json.loads(body)["checks"]
+    return found
+
+
+def test_readiness_names_every_check_the_deploy_relies_on(tmp_path: Path) -> None:
+    built = build(
+        _env(tmp_path, DEMO_MODE="public", DEMO_ACCESS_CODE=CODE),
+        api=FakeDocker(),
+        runner_factory=LocalRunner,
+    )
+    checks = _checks(built)
+    assert set(checks) == {"store", "docker", "image", "runtime", "disk", "provider", "demo"}
+    assert all(check["ok"] for check in checks.values())
+    assert checks["demo"]["detail"] == "public mode, access code configured"
+    built.lock.close()
+
+
+def test_a_missing_sandbox_image_makes_the_demo_not_ready(tmp_path: Path) -> None:
+    docker = FakeDocker()
+    docker.images.clear()
+    built = build(_env(tmp_path), api=docker, runner_factory=LocalRunner)
+    ready = built.app.handle(Request("GET", "/readyz"))
+    assert isinstance(ready, Response)
+    assert ready.status == 503
+    image = _checks(built)["image"]
+    assert image["ok"] is False
+    assert "build it on the host" in str(image["detail"])
+    built.lock.close()
+
+
+def test_an_unwritable_event_log_makes_the_demo_not_ready(tmp_path: Path) -> None:
+    built = build(_env(tmp_path), api=FakeDocker(), runner_factory=LocalRunner)
+    built.store.close()  # the log cannot take a write any more
+    ready = built.app.handle(Request("GET", "/readyz"))
+    assert isinstance(ready, Response)
+    assert ready.status == 503
+    assert _checks(built)["store"]["ok"] is False
+    built.lock.close()
+
+
+def test_public_mode_without_a_long_code_is_never_reported_ready(tmp_path: Path) -> None:
+    built = build(
+        _env(tmp_path, DEMO_MODE="public", DEMO_ACCESS_CODE=CODE),
+        api=FakeDocker(),
+        runner_factory=LocalRunner,
+    )
+    # The settings object refuses this state at startup; /readyz must not depend on that alone.
+    object.__setattr__(built.app.settings.demo, "access_code", "short")
+    ready = built.app.handle(Request("GET", "/readyz"))
+    assert isinstance(ready, Response)
+    assert ready.status == 503
+    demo = _checks(built)["demo"]
+    assert demo["ok"] is False
+    assert "short" not in str(demo["detail"])
     built.lock.close()
