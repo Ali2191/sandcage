@@ -1,0 +1,100 @@
+# The public edge. SITE_ADDRESS is a domain or <ip-with-dashes>.sslip.io (automatic HTTPS);
+# "localhost" uses Caddy's own local authority (the rehearsal).
+{
+	email {$ACME_EMAIL}
+	admin 127.0.0.1:2019
+
+	servers {
+		# HTTP/1.1 and HTTP/2 only: no UDP port to open, and event streams are plain HTTP.
+		protocols h1 h2
+		timeouts {
+			read_header 10s
+			read_body 20s
+			idle 2m
+		}
+	}
+}
+
+{$SITE_ADDRESS} {
+	# The access log never carries a query string or a header: the access code travels in a
+	# header, and nothing sensitive is logged by accident.
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>headers delete
+				request>uri query {
+					delete code
+					delete access_code
+					delete token
+				}
+				resp_headers delete
+			}
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy same-origin
+		-Server
+	}
+
+	# The API: the /api prefix is stripped, bodies are capped at 64 KB (a bigger Content-Length is
+	# refused without reading it), nothing is buffered or compressed so event streams arrive
+	# event by event.
+	handle_path /api/* {
+		request_body {
+			max_size 64KB
+		}
+
+		# Event streams are long: the API sends a heartbeat every 15 s, so a backend that is
+		# silent for 60 s is dead. Every other API call must answer within 30 s.
+		@events path_regexp ^/runs/[0-9a-f]{12}/events$
+		handle @events {
+			reverse_proxy api:8000 {
+				flush_interval -1
+				health_uri /healthz
+				health_interval 10s
+				health_timeout 3s
+				transport http {
+					dial_timeout 5s
+					read_timeout 60s
+					compression off
+				}
+			}
+		}
+		handle {
+			reverse_proxy api:8000 {
+				flush_interval -1
+				health_uri /healthz
+				health_interval 10s
+				health_timeout 3s
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+					read_timeout 30s
+					compression off
+				}
+			}
+		}
+	}
+
+	# The panel: everything else. The policy allows only this origin. Script and style
+	# 'unsafe-inline' stay because the framework inlines its bootstrap and payload scripts into
+	# every page; nothing else is allowed (no objects, no framing, no other origins, fixed base
+	# and form targets). Images may be data: or blob: URLs.
+	handle {
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		encode zstd gzip
+		reverse_proxy panel:3000 {
+			health_uri /
+			health_interval 15s
+			health_timeout 5s
+		}
+	}
+}

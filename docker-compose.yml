@@ -1,0 +1,194 @@
+# Sandcage on one VM: caddy (the only public service) -> panel and api -> dockerproxy -> Docker.
+#
+# Run it through deploy/deploy.sh, which writes the env file (mode 600, outside this repository)
+# and passes it as --env-file. Every ${VAR:?...} below stops compose with a message naming the
+# missing setting. No secret is written in this file: the access code comes from the env file,
+# the model key is a file mounted at /run/secrets (read only by scripts/api_with_key_file.py).
+#
+# Rules this file keeps (tests/test_deploy_compose.py asserts each one):
+#   * only dockerproxy mounts the Docker socket; only caddy publishes ports (80 and 443);
+#   * every service drops all capabilities, forbids new privileges, has memory and pids limits
+#     and a healthcheck, and runs as a non-root user;
+#   * the work and data directories are mounted at the same absolute path as on the host, because
+#     the host's Docker daemon bind-mounts workspaces into the sandbox containers the API starts;
+#   * sandbox containers have no network at all; the only outbound traffic from the API process
+#     is the model call and the S2 fetcher, through the `egress` network.
+name: sandcage
+
+x-service: &service
+  restart: unless-stopped
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "5"}
+
+services:
+  caddy:
+    <<: *service
+    build:
+      context: .
+      dockerfile: deploy/caddy.Dockerfile
+    image: sandcage/caddy:local
+    user: "10001:10001"
+    # Non-root Caddy binds 80 and 443 through this namespaced sysctl, so it needs no capability.
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: "0"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in the env file}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in the env file}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/var/lib/caddy-data
+      - caddy-config:/var/lib/caddy-config
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    networks: [edge, app]
+    depends_on:
+      api: {condition: service_healthy}
+      panel: {condition: service_healthy}
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 15s
+
+  panel:
+    <<: *service
+    build:
+      context: .
+      dockerfile: deploy/panel.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api
+    image: sandcage/panel:local
+    user: "10001:10001"
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+      - /app/frontend/.next/cache:size=64m,uid=10001,gid=10001
+    networks: [app]
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 20s
+
+  api:
+    <<: *service
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    image: sandcage/api:local
+    user: "10001:10001"
+    # A fixed host name: with the per-process instance id it lets a restarted API recognise and
+    # remove the sandboxes its previous process left behind.
+    hostname: sandcage-api
+    environment:
+      SANDCAGE_API_HOST: 0.0.0.0
+      SANDCAGE_API_PORT: "8000"
+      # Public mode fails closed: the API refuses to start without a code of 12+ characters.
+      DEMO_MODE: public
+      DEMO_TRUST_PROXY: "true"
+      DEMO_ACCESS_CODE: ${DEMO_ACCESS_CODE:?set DEMO_ACCESS_CODE in the env file}
+      DEMO_PAUSED: ${DEMO_PAUSED:-false}
+      DEMO_MAX_CONCURRENT_RUNS: ${DEMO_MAX_CONCURRENT_RUNS:-2}
+      DEMO_RUNS_PER_IP_PER_HOUR: ${DEMO_RUNS_PER_IP_PER_HOUR:-3}
+      DEMO_RUNS_PER_DAY: ${DEMO_RUNS_PER_DAY:-40}
+      DEMO_RUN_TOKEN_CAP: ${DEMO_RUN_TOKEN_CAP:-60000}
+      DEMO_DAY_TOKEN_CAP: ${DEMO_DAY_TOKEN_CAP:-2000000}
+      LLM_PROVIDER: ${LLM_PROVIDER:-vultr}
+      LLM_BASE_URL: https://api.vultrinference.com/v1
+      LLM_MODEL: ${LLM_MODEL:-deepseek-v4.1-flash-1017}
+      LLM_RETRIES: ${LLM_RETRIES:-2}
+      # The launcher reads the key from this file inside the API process. The key is never given
+      # to a sandbox: the Docker proxy refuses any container created with an environment.
+      SANDCAGE_KEY_FILE: /run/secrets/llm_api_key
+      SANDBOX_RUNTIME: ${SANDBOX_RUNTIME:-runc}
+      DOCKER_HOST: tcp://dockerproxy:2375
+      # Same path as on the host (Bugs #7 and #8): workspaces, the event log, the learned policy.
+      TMPDIR: ${SANDCAGE_WORK_DIR:?set SANDCAGE_WORK_DIR in the env file}
+      SANDCAGE_DATA_DIR: ${SANDCAGE_DATA_DIR:?set SANDCAGE_DATA_DIR in the env file}
+      SANDCAGE_BENCH_RESULTS: /bench/results.json
+    secrets:
+      - llm_api_key
+    volumes:
+      - ${SANDCAGE_WORK_DIR}:${SANDCAGE_WORK_DIR}
+      - ${SANDCAGE_DATA_DIR}:${SANDCAGE_DATA_DIR}
+      # The persisted Bench results folder: replace results.json here, no rebuild needed.
+      - ./benchmarks/out:/bench:ro
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    networks: [app, egress, dockerapi]
+    depends_on:
+      dockerproxy: {condition: service_healthy}
+    mem_limit: 1g
+    memswap_limit: 1g
+    pids_limit: 512
+    cpus: 1.5
+    healthcheck:
+      test: ["CMD", "python", "-I", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/healthz', timeout=3).read()"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 20s
+
+  dockerproxy:
+    <<: *service
+    image: sandcage/api:local
+    command: ["python", "-I", "-m", "sandcage.dockerproxy"]
+    user: "10001:10001"
+    # Membership of the socket's group is what lets this service, and only this one, use Docker.
+    group_add:
+      - "${DOCKER_GID:?set DOCKER_GID (the group id of /var/run/docker.sock) in the env file}"
+    environment:
+      PROXY_HOST: 0.0.0.0
+      PROXY_PORT: "2375"
+      DOCKER_SOCKET: /var/run/docker.sock
+      SANDCAGE_WORK_DIR: ${SANDCAGE_WORK_DIR:?set SANDCAGE_WORK_DIR in the env file}
+      SANDBOX_IMAGE: sandcage-sandbox:latest
+    volumes:
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    networks: [dockerapi]
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD", "python", "-I", "-c", "import socket; socket.create_connection(('127.0.0.1', 2375), 3).close()"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 10s
+
+networks:
+  # Visitors and certificate issuance: Caddy only.
+  edge: {}
+  # Caddy, the panel and the API talk here; no route out.
+  app:
+    internal: true
+  # The API's model calls and the fetcher. Nothing else is attached.
+  egress: {}
+  # The API reaches the Docker proxy here; no route out.
+  dockerapi:
+    internal: true
+
+volumes:
+  caddy-data: {}
+  caddy-config: {}
+
+secrets:
+  llm_api_key:
+    file: ${SANDCAGE_LLM_KEY_FILE:?set SANDCAGE_LLM_KEY_FILE (a mode-600 file holding the model key)}
