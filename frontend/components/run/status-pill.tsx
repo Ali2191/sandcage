@@ -6,18 +6,19 @@ export type ConnectionView = "live" | "finished" | "disconnected";
 /** The top-bar status: needs you (pulsing ember), disconnected, or live (the one green dot). */
 export function StatusPill({ connection, waiting }: { connection: ConnectionView; waiting: boolean }) {
   const base = "inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-xs";
+  // A dropped connection comes first: a question the page cannot confirm is not "waiting for you".
+  if (connection === "disconnected") {
+    return (
+      <span role="status" className={cx(base, "border-line-strong text-muted")}>
+        {COPY.status.disconnected}
+      </span>
+    );
+  }
   if (waiting && connection !== "finished") {
     return (
       <span role="status" className={cx(base, "border-ember-line bg-ember-glow text-ember-soft")}>
         <span aria-hidden="true" className="size-2 animate-pulse-soft rounded-full bg-ember" />
         {COPY.status.needsYou}
-      </span>
-    );
-  }
-  if (connection === "disconnected") {
-    return (
-      <span role="status" className={cx(base, "border-line-strong text-muted")}>
-        {COPY.status.disconnected}
       </span>
     );
   }

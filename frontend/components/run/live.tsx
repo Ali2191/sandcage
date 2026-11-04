@@ -68,7 +68,9 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
       setStopError(cause instanceof ApiError ? (cause.needsCode ? COPY.live.stopNeedsCode : cause.message) : COPY.live.sendFailed);
     }
   }, [runId]);
-  useEffect(() => {
+  // A layout effect, not a passive one: it runs before the browser paints, so whenever the
+  // question is on screen Esc already works (a passive effect left a short gap after paint).
+  useLayoutEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== "Escape" || isTypingTarget(event.target) || stopping) return;
       void stop();
