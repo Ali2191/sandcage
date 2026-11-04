@@ -319,11 +319,29 @@ class CapabilityCount(ContractModel):
     blocked: int
 
 
+class EgressRecord(ContractModel):
+    """One network target, measured: a request actually made (host, resolved address,
+    status, bytes received), or a target only attempted and blocked (``requests`` 0)."""
+
+    host: str
+    address: str | None = None
+    status: int | None = None
+    bytes_received: int = 0
+    requests: int = 0
+    blocked: bool = False
+
+
 class ReportEvent(EventBase):
+    """``outcome`` is the solid pill and ``headline`` the report's first line, both written
+    by the backend; a withheld patch reads "Withheld", never "Delivered"."""
+
     kind: Literal["report"] = "report"
     trifecta: Trifecta
     blocks: int
     capabilities: list[CapabilityCount] = Field(default_factory=list)
+    outcome: str = ""
+    headline: str = ""
+    egress: list[EgressRecord] = Field(default_factory=list)
 
 
 class LearnSuggestion(ContractModel):
@@ -365,6 +383,7 @@ class DoneEvent(EventBase):
     summary: str
     steps: int
     guard: bool
+    outcome: str = ""
     provider: str | None = None
     model: str | None = None
     sandbox_runtime: str | None = None

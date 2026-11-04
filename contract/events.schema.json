@@ -971,6 +971,11 @@
           "default": null,
           "title": "Model"
         },
+        "outcome": {
+          "default": "",
+          "title": "Outcome",
+          "type": "string"
+        },
         "phase": {
           "$ref": "#/$defs/Phase"
         },
@@ -1092,6 +1097,7 @@
         "summary",
         "steps",
         "guard",
+        "outcome",
         "provider",
         "model",
         "sandbox_runtime",
@@ -1112,6 +1118,64 @@
         "trifecta"
       ],
       "title": "DoneEvent",
+      "type": "object"
+    },
+    "EgressRecord": {
+      "description": "One network target, measured: a request actually made (host, resolved address,\nstatus, bytes received), or a target only attempted and blocked (``requests`` 0).",
+      "properties": {
+        "address": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        },
+        "blocked": {
+          "default": false,
+          "title": "Blocked",
+          "type": "boolean"
+        },
+        "bytes_received": {
+          "default": 0,
+          "title": "Bytes Received",
+          "type": "integer"
+        },
+        "host": {
+          "title": "Host",
+          "type": "string"
+        },
+        "requests": {
+          "default": 0,
+          "title": "Requests",
+          "type": "integer"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        }
+      },
+      "required": [
+        "host",
+        "address",
+        "status",
+        "bytes_received",
+        "requests",
+        "blocked"
+      ],
+      "title": "EgressRecord",
       "type": "object"
     },
     "ExcludedFile": {
@@ -1846,6 +1910,7 @@
       "type": "object"
     },
     "ReportEvent": {
+      "description": "``outcome`` is the solid pill and ``headline`` the report's first line, both written\nby the backend; a withheld patch reads \"Withheld\", never \"Delivered\".",
       "properties": {
         "blocks": {
           "title": "Blocks",
@@ -1869,6 +1934,18 @@
           "title": "Capabilities",
           "type": "array"
         },
+        "egress": {
+          "items": {
+            "$ref": "#/$defs/EgressRecord"
+          },
+          "title": "Egress",
+          "type": "array"
+        },
+        "headline": {
+          "default": "",
+          "title": "Headline",
+          "type": "string"
+        },
         "id": {
           "default": 0,
           "title": "Id",
@@ -1878,6 +1955,11 @@
           "const": "report",
           "default": "report",
           "title": "Kind",
+          "type": "string"
+        },
+        "outcome": {
+          "default": "",
+          "title": "Outcome",
           "type": "string"
         },
         "phase": {
@@ -1904,7 +1986,10 @@
         "kind",
         "trifecta",
         "blocks",
-        "capabilities"
+        "capabilities",
+        "outcome",
+        "headline",
+        "egress"
       ],
       "title": "ReportEvent",
       "type": "object"

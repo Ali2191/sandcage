@@ -129,6 +129,24 @@ def workspace_diff(
     return WorkspaceDiff(tuple(files), patch, secrets, truncated)
 
 
+def file_section(original: Path, workspace: Path, change: FileChange) -> str | None:
+    """The *unmasked* git section for one changed text file, for building the delivered
+    patch; None for a secret or binary file, or one that vanished since the diff."""
+    if change.secret or change.binary:
+        return None
+    old = None if change.kind is ChangeKind.ADDED else _read(original, change.path)
+    new = None if change.kind is ChangeKind.DELETED else _read(workspace, change.path)
+    old_text = "" if old is None else old.text
+    new_text = "" if new is None else new.text
+    if old_text is None or new_text is None:
+        return None
+    if (change.kind is not ChangeKind.ADDED and old is None) or (
+        change.kind is not ChangeKind.DELETED and new is None
+    ):
+        return None
+    return _section(change.path, change.kind, old_text, new_text)[0]
+
+
 def _under(path: str, roots: tuple[str, ...]) -> bool:
     return any(path == root or path.startswith(root + "/") for root in roots)
 

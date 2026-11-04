@@ -222,9 +222,6 @@ def plan_reply() -> str:
 
 
 VERDICT_PASS: Final = json.dumps({"verdict": "pass", "reasons": []})
-VERDICT_FAIL_TESTS: Final = json.dumps(
-    {"verdict": "fail", "reasons": ["The discount test was skipped instead of fixed."]}
-)
 REVIEW_CLEAN: Final = json.dumps({"findings": []})
 REVIEW_SNEAKY: Final = json.dumps(
     {
@@ -275,7 +272,8 @@ def scripted_models(scenario: ScenarioId | str = ScenarioId.DEMO) -> Models:
     """The scripted model set for a scenario. An unknown id raises ``ValueError``."""
     chosen = ScenarioId(scenario)
     first, retry = executor_script(chosen)
-    verdicts = [VERDICT_FAIL_TESTS, VERDICT_PASS] if chosen is ScenarioId.SKIP_TEST else []
+    # skip_test: the verifier's deterministic checks fail the first attempt (tests still fail),
+    # so the model is only asked once the fix is in; it passes it.
     return Models(
         scenario=chosen,
         understand=ScriptedClient([understand_reply(ask=chosen is ScenarioId.CLARIFY)]),
@@ -283,7 +281,7 @@ def scripted_models(scenario: ScenarioId | str = ScenarioId.DEMO) -> Models:
         planner=ScriptedClient([plan_reply()]),
         executor=ScriptedClient([*first, *retry], when_done=FINISH),
         executor_retry=retry,
-        verifier=ScriptedClient(verdicts, when_done=VERDICT_PASS),
+        verifier=ScriptedClient([], when_done=VERDICT_PASS),
         redteam=ScriptedClient(
             [REVIEW_SNEAKY] if chosen is ScenarioId.SNEAKY_URLLIB else [],
             when_done=REVIEW_CLEAN,

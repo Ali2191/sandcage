@@ -119,6 +119,22 @@ def _command_phrase(command: str, rule_id: str, is_secret: SecretCheck) -> str:
     return f"run {program}" if program else "run a command"
 
 
+def target_hosts(tool: str, args: Mapping[str, object]) -> list[str]:
+    """Hosts an action reaches for (a fetched URL, or hosts in a command's words), in order."""
+    if tool == "http_get":
+        host = _host(_text(args, "url"))
+        return [host] if host else []
+    if tool != "run_command":
+        return []
+    parsed = parse_command(_text(args, "command"))
+    words = [word for segment in parsed.segments for word in segment.words]
+    found: list[str] = []
+    for host in (_host(word) for word in words):
+        if host and host not in found:
+            found.append(host)
+    return found
+
+
 def _host(word: str) -> str | None:
     match = _URL.search(word)
     if match:

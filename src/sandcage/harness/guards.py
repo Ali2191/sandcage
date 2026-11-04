@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import threading
 import time
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -35,7 +36,7 @@ from sandcage.contract.events import (
     BreakerEvent,
     BreakerState,
     Budget,
-    EventBase,
+    Event,
     GuardEvent,
     RunStatus,
     StepEvent,
@@ -53,7 +54,7 @@ INJECTION_TAG: Final = "prompt_injection_suspected"
 SECONDS_ENV: Final = "SANDCAGE_MAX_SECONDS"
 TOKENS_ENV: Final = "LLM_MAX_TOKENS"
 
-Emit = Callable[[EventBase], None]
+Emit = Callable[[Event], object]
 
 
 class GuardConfigError(ValueError):
@@ -303,7 +304,7 @@ class Guards:
     breaker: Breaker = field(default_factory=Breaker)
     steps: int = 0
     stop_reason: RunStatus | None = None
-    _stopped: bool = False
+    _stop: threading.Event = field(default_factory=threading.Event)
 
     def start(self) -> None:
         self.clock.start()
@@ -311,14 +312,14 @@ class Guards:
     # --- stop ----------------------------------------------------------------------------
 
     def request_stop(self) -> None:
-        self._stopped = True
+        self._stop.set()
 
     @property
     def stopped(self) -> bool:
-        return self._stopped
+        return self._stop.is_set()
 
     def metered(self, client: ChatClient, role: str) -> MeteredClient:
-        return MeteredClient(client, role, self.meter, lambda: self._stopped)
+        return MeteredClient(client, role, self.meter, self._stop.is_set)
 
     def wait_for_human(self, approver: Approver) -> Approver:
         """An approver whose waiting time does not count against the time budget."""
@@ -339,7 +340,7 @@ class Guards:
         return Hooks(gate=self.gate, after_step=self.after_step, annotate=self.annotate)
 
     def gate(self, action: AgentAction | None) -> RunStatus | None:
-        if self._stopped:
+        if self._stop.is_set():
             return RunStatus.STOPPED
         elapsed = self.clock.elapsed()
         if elapsed >= self.limits.max_seconds:
@@ -417,18 +418,18 @@ class Guards:
         self._emit(self._breaker_event(BreakerState.TRIPPED, source))
         approval = breaker_approval(step, source=source, tried=breaker.tried())
         resumed = False
-        if self.approver is not None and not self._stopped:
+        if self.approver is not None and not self._stop.is_set():
             try:
                 with self.clock.waiting():
                     resumed = self.approver(approval).approved
             except Exception:  # noqa: BLE001 - spec: an approver failure counts as no
                 resumed = False
-        if resumed and not self._stopped:
+        if resumed and not self._stop.is_set():
             breaker.reset()
             self._emit(self._breaker_event(BreakerState.RESUMED, source))
             return None
         self._emit(self._breaker_event(BreakerState.KILLED, source))
-        return RunStatus.STOPPED if self._stopped else RunStatus.KILLED
+        return RunStatus.STOPPED if self._stop.is_set() else RunStatus.KILLED
 
     def _breaker_event(self, state: BreakerState, source: str | None) -> BreakerEvent:
         breaker = self.breaker
@@ -445,6 +446,6 @@ class Guards:
             trips=breaker.trips,
         )
 
-    def _emit(self, event: EventBase) -> None:
+    def _emit(self, event: Event) -> None:
         if self.emit is not None:
             self.emit(event)

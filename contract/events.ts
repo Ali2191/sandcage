@@ -207,6 +207,7 @@ export interface DoneEvent {
   summary: string;
   steps: number;
   guard: boolean;
+  outcome: string;
   provider: string | null;
   model: string | null;
   sandbox_runtime: string | null;
@@ -225,6 +226,19 @@ export interface DoneEvent {
   scout_flags: string[];
   suspicious_pages: string[];
   trifecta: Trifecta | null;
+}
+
+/**
+ * One network target, measured: a request actually made (host, resolved address,
+ * status, bytes received), or a target only attempted and blocked (``requests`` 0).
+ */
+export interface EgressRecord {
+  host: string;
+  address: string | null;
+  status: number | null;
+  bytes_received: number;
+  requests: number;
+  blocked: boolean;
 }
 
 export interface ExcludedFile {
@@ -387,6 +401,10 @@ export interface RedteamFinding {
   explanation: string;
 }
 
+/**
+ * ``outcome`` is the solid pill and ``headline`` the report's first line, both written
+ * by the backend; a withheld patch reads "Withheld", never "Delivered".
+ */
 export interface ReportEvent {
   id: number;
   run_id: string;
@@ -397,6 +415,9 @@ export interface ReportEvent {
   trifecta: Trifecta;
   blocks: number;
   capabilities: CapabilityCount[];
+  outcome: string;
+  headline: string;
+  egress: EgressRecord[];
 }
 
 export type ResolvedBy = "human" | "timeout" | "stop" | "error";
