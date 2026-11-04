@@ -1,4 +1,4 @@
-.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker api panel-check
+.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker api panel-check dev
 
 check: lint types test env-check contract-check
 
@@ -42,3 +42,7 @@ api:
 # Needs `npm ci` in frontend/ once. The backend's `make check` does not run it.
 panel-check:
 	cd frontend && npm run check
+
+# API and panel together for local work: scripts/dev.sh (creates the git-ignored .dev.env).
+dev:
+	./scripts/dev.sh

@@ -255,7 +255,10 @@ async function fail(response: Response, useServerMessage: boolean): Promise<neve
     body = null; // an error page that is not JSON: the status alone tells the story
   }
   const retry = Number(response.headers.get("retry-after"));
-  const message = (useServerMessage ? serverMessage(body) : null) ?? describeStatus(response.status);
+  // The server's own words are for the cases written for people (busy, rate limited, paused);
+  // a 400, 401, 403 or 413 never shows raw API text.
+  const friendly = response.status === 409 || response.status === 429 || response.status === 503;
+  const message = (useServerMessage && friendly ? serverMessage(body) : null) ?? describeStatus(response.status);
   throw new ApiError(message, response.status, Number.isFinite(retry) && retry > 0 ? retry : null);
 }
 

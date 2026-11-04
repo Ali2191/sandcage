@@ -17,7 +17,8 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "e2e": "playwright test",
     "screens": "SANDCAGE_SCREENSHOTS=1 playwright test e2e/screens.e2e.ts",
-    "wording:verify": "node scripts/wording-verify.ts"
+    "wording:verify": "node scripts/wording-verify.ts",
+    "e2e:real": "playwright test -c playwright.real.config.ts"
   },
   "dependencies": {
     "next": "16.4.5",

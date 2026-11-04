@@ -24,3 +24,7 @@ dist/
 
 # Live smoke output (real model runs, never committed)
 live-runs/
+
+# Local dev (make dev): environment file with the access code, and its event log
+.dev.env
+.dev-data/
