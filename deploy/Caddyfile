@@ -3,6 +3,8 @@
 {
 	email {$ACME_EMAIL}
 	admin 127.0.0.1:2019
+	# The plain-HTTP redirect is written out below, so that it too carries no Server header.
+	auto_https disable_redirects
 
 	servers {
 		# HTTP/1.1 and HTTP/2 only: no UDP port to open, and event streams are plain HTTP.
@@ -15,20 +17,22 @@
 	}
 }
 
+# Port 80: certificate challenges are answered by Caddy itself; everything else goes to HTTPS.
+http://{$SITE_ADDRESS} {
+	header -Server
+	redir https://{host}{uri} permanent
+}
+
 {$SITE_ADDRESS} {
-	# The access log never carries a query string or a header: the access code travels in a
-	# header, and nothing sensitive is logged by accident.
+	# The access log never carries a query string or any header: the access code travels in a
+	# header, and nothing sensitive may be logged by accident. (Whatever follows a "?" is cut.)
 	log {
 		output stdout
 		format filter {
 			wrap json
 			fields {
 				request>headers delete
-				request>uri query {
-					delete code
-					delete access_code
-					delete token
-				}
+				request>uri regexp \?.* ""
 				resp_headers delete
 			}
 		}

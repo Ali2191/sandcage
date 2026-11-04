@@ -147,7 +147,7 @@ services:
   dockerproxy:
     <<: *service
     image: sandcage/api:local
-    command: ["python", "-I", "-m", "sandcage.dockerproxy"]
+    command: ["python", "-P", "-m", "sandcage.dockerproxy"]
     user: "10001:10001"
     # Membership of the socket's group is what lets this service, and only this one, use Docker.
     group_add:

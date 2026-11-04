@@ -28,4 +28,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=4s --start-period=20s --retries=5 \
     CMD ["python", "-I", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/healthz', timeout=3).read()"]
 
-CMD ["python", "-I", "scripts/api_with_key_file.py"]
+CMD ["python", "-P", "scripts/api_with_key_file.py"]
