@@ -180,6 +180,22 @@ def test_empty_content_falls_back_to_the_reasoning_action() -> None:
     assert chat.complete(MESSAGES).text == "real"  # content is preferred
 
 
+def test_vultr_shape_content_with_a_reasoning_field() -> None:
+    """Provider check, 4 Nov: all four Vultr candidates sent a short ``reasoning`` field next
+    to a clean JSON ``content``. The content is the answer; the reasoning is never used,
+    even when it holds a different action."""
+    message: dict[str, object] = {
+        "role": "assistant",
+        "content": '{"tool": "list_dir", "args": {"path": "."}, "reason": "look first"}',
+        "reasoning": 'Maybe {"tool": "finish", "args": {}} ... no, list first.',
+    }
+    chat, _, _ = client(ok(message, {"prompt_tokens": 512, "completion_tokens": 40}))
+    completion = chat.complete(MESSAGES)
+    assert completion.recovered is None
+    assert completion.usage == Usage(512, 40)
+    assert parse_action(completion.text).tool == "list_dir"
+
+
 def test_a_rejected_native_call_is_recovered() -> None:
     error = {
         "error": {
