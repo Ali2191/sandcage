@@ -59,6 +59,10 @@ export class MockRun {
     return done && done.kind === "done" ? done.status : "running";
   }
 
+  get pendingApproval(): Approval | null {
+    return this.pending?.approval ?? null;
+  }
+
   get pendingApprovalId(): string | null {
     return this.pending?.approval.id ?? null;
   }

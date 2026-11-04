@@ -36,8 +36,8 @@ async function events(id: string, lastEventId?: number): Promise<Event[]> {
 
 async function waitForApproval(id: string): Promise<string> {
   for (let i = 0; i < 500; i += 1) {
-    const info = (await (await fetch(`${base}/runs/${id}`)).json()) as { pending_approval: string | null };
-    if (info.pending_approval) return info.pending_approval;
+    const info = (await (await fetch(`${base}/runs/${id}`)).json()) as { pending: { id: string } | null };
+    if (info.pending) return info.pending.id;
     await new Promise((r) => setTimeout(r, 4));
   }
   throw new Error("no approval appeared");

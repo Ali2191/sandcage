@@ -5,7 +5,8 @@ import { modelLabel, repoLabel, runMeta, runOutcome } from "./labels";
 
 const row = (patch: Partial<RunRow>): RunRow => ({
   id: "3f2a9c1e7b04", repo: "invoice-calc", task: "t", guard: true, status: "finished", created: 1793000000, finished: 1793000060,
-  provider: "fake", model: "scripted", steps: 9, counts: { allowed: 7, denied: 2, asked: 0, injection_tagged: 2 }, tokens: null, tokens_reported: false, ...patch,
+  provider: "fake", model: "scripted", steps: 9, counts: { allowed: 7, denied: 2, asked: 0, injection_tagged: 2 }, tokens: null, tokens_reported: false,
+  outcome: "Delivered", delivered: true, sandbox_runtime: "runc", released_by_human: false, delivery_blocked: false, ...patch,
 });
 
 describe("labels", () => {

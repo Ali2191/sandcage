@@ -27,7 +27,6 @@ function DemoBadge() {
   }, []);
   if (status === null) return null;
   if (status.paused) return <Pill tone="ember-soft">{COPY.demo.paused}</Pill>;
-  if (status.runs_left_today === null) return null;
   const left = status.runs_left_today;
   const [lead, ...rest] = COPY.demo.left(left).split(String(left));
   return (

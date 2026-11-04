@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import type { Event } from "../../contract/events.ts";
+import type { DemoStatus, RunDetail, RunRow } from "../lib/api.ts";
 import { doneDraft } from "./builders.ts";
 import { categories, scenarios } from "./catalogue.ts";
 import { MockRun, StopSignal, type RunMeta } from "./run.ts";
@@ -44,7 +45,7 @@ interface Injection {
 
 const policyDoc: unknown = JSON.parse(readFileSync(path.join(import.meta.dirname, "data/policy.json"), "utf8"));
 
-function runRow(run: MockRun): Record<string, unknown> {
+function runRow(run: MockRun): RunRow {
   const done = run.events.find((e) => e.kind === "done");
   const steps = run.events.filter((e) => e.kind === "step");
   return {
@@ -61,8 +62,21 @@ function runRow(run: MockRun): Record<string, unknown> {
     counts: done && done.kind === "done" ? done.counts : null,
     tokens: null,
     tokens_reported: false,
+    outcome: done && done.kind === "done" ? done.outcome : null,
+    delivered: done && done.kind === "done" ? done.delivered || run.outputs.released : false,
+    sandbox_runtime: done && done.kind === "done" ? done.sandbox_runtime : null,
     released_by_human: run.outputs.released,
     delivery_blocked: run.outputs.blocked,
+  };
+}
+
+function runDetail(run: MockRun): RunDetail {
+  const done = run.events.find((e) => e.kind === "done");
+  return {
+    ...runRow(run),
+    pending: run.pendingApproval,
+    result: done && done.kind === "done" ? done : null,
+    server_time: Date.now() / 1000,
   };
 }
 
@@ -287,17 +301,26 @@ export class MockServer {
     if (route === "GET /demo/status") {
       const gate = await this.inject("demo", res, req);
       if (gate === "handled") return;
-      const left = this.options.runsPerDay === null ? null : Math.max(0, this.options.runsPerDay - this.runsToday);
-      return send(200, {
+      const perDay = this.options.runsPerDay ?? 40;
+      const status: DemoStatus = {
         access_required: this.options.code !== null,
+        public: this.options.code !== null,
         paused: this.paused,
         message: this.paused ? "New runs are paused while the demo is being looked after. Past runs stay readable." : null,
-        runs_left_today: left,
-        runs_per_day: this.options.runsPerDay,
         active_runs: [...this.runs.values()].filter((r) => !r.finished).length,
         max_concurrent: 2,
-        sandbox_runtime: "runc",
-      });
+        runs_today: this.runsToday,
+        runs_per_day: perDay,
+        runs_left_today: Math.max(0, perDay - this.runsToday),
+        runs_per_client_per_hour: 3,
+        tokens_today: 0,
+        daily_token_cap: 2_000_000,
+        run_token_cap: 60_000,
+        resets_at: Math.floor(Date.now() / 86_400_000 + 1) * 86_400,
+        sandbox_runtime: { requested: "runc", active: "runc", gvisor: false, label: "runc (mock)", reason: null },
+        provider_ready: true,
+      };
+      return send(200, status);
     }
     if (route === "POST /demo/unlock") {
       this.requireCode(req);
@@ -308,7 +331,7 @@ export class MockServer {
     if (route === "GET /repos") {
       const gate = await this.inject("repos", res, req);
       if (gate === "handled") return;
-      return send(200, gate === "empty" ? [] : ["invoice-calc"]);
+      return send(200, { repos: gate === "empty" ? [] : ["invoice-calc"] });
     }
     if (route === "GET /bench/scenarios") {
       const gate = await this.inject("gallery", res, req);
@@ -380,8 +403,8 @@ export class MockServer {
       case "GET ": {
         const gate = await this.inject("run", res, req);
         if (gate === "handled") return;
-        // The single-run view also names the approval that waits (Specs/API.md).
-        return send(200, { ...runRow(run), pending_approval: run.pendingApprovalId });
+        // The single-run view also carries the open question, the final event and the clock.
+        return send(200, runDetail(run));
       }
       case "GET events":
         return this.stream(req, res, run);

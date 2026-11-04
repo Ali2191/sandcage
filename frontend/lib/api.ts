@@ -6,6 +6,7 @@
  * (run rows, demo status, catalogue, policy, bench) have no contract type yet: they are
  * adapter types written from Specs/API.md and listed in CONTRACT-REQUESTS.md.
  */
+import type { Approval, DoneEvent } from "../../contract/events";
 import { accessCode } from "./access";
 
 export const API_BASE: string = (process.env["NEXT_PUBLIC_API_URL"] ?? "http://127.0.0.1:8001").replace(/\/+$/, "");
@@ -52,9 +53,22 @@ export interface RunRow {
   tokens: number | null;
   /** True only when the provider reported the token count. */
   tokens_reported: boolean;
-  /** After the run ended: a human released a withheld patch (the log is closed by `done`). */
-  released_by_human?: boolean;
-  delivery_blocked?: boolean;
+  /** The run's final outcome pill ("Delivered", "Withheld", ...); null while it runs. */
+  outcome: string | null;
+  delivered: boolean;
+  /** Set once the run ended: the sandbox runtime's label, as `done` reported it. */
+  sandbox_runtime: string | null;
+  /** A human released a withheld patch, during the run or after it (the log is closed by `done`). */
+  released_by_human: boolean;
+  delivery_blocked: boolean;
+}
+
+/** `GET /runs/{id}`: the row plus the open question, the final event and the server's clock. */
+export interface RunDetail extends RunRow {
+  pending: Approval | null;
+  result: DoneEvent | null;
+  /** Unix seconds on the server, to correct countdowns for clock skew. */
+  server_time: number;
 }
 
 export interface RunList {
@@ -64,15 +78,32 @@ export interface RunList {
   offset: number;
 }
 
+export interface SandboxRuntimeStatus {
+  requested: string;
+  active: string | null;
+  gvisor: boolean;
+  label: string;
+  reason: string | null;
+}
+
 export interface DemoStatus {
   access_required: boolean;
+  public: boolean;
   paused: boolean;
   message: string | null;
-  runs_left_today: number | null;
-  runs_per_day: number | null;
   active_runs: number;
   max_concurrent: number;
-  sandbox_runtime: string | null;
+  runs_today: number;
+  runs_per_day: number;
+  runs_left_today: number;
+  runs_per_client_per_hour: number;
+  tokens_today: number;
+  daily_token_cap: number;
+  run_token_cap: number;
+  /** Unix seconds of the next UTC midnight. */
+  resets_at: number;
+  sandbox_runtime: SandboxRuntimeStatus | null;
+  provider_ready: boolean;
 }
 
 export interface BenchScenario {
@@ -245,11 +276,12 @@ function post(body: unknown): RequestInit {
 // --- endpoints -----------------------------------------------------------------
 
 export const listRepos = async (): Promise<string[]> => {
-  const data = await json<unknown>("/repos");
-  if (!Array.isArray(data) || !data.every((x) => typeof x === "string")) {
+  const data = await json<{ repos?: unknown }>("/repos");
+  const repos = data.repos;
+  if (!Array.isArray(repos) || !repos.every((x) => typeof x === "string")) {
     throw new ApiError("The server sent a repository list the panel could not read.", 200);
   }
-  return data;
+  return repos;
 };
 
 export const getDemoStatus = (): Promise<DemoStatus> => json<DemoStatus>("/demo/status");
@@ -267,7 +299,7 @@ export const startRun = async (body: StartBody): Promise<{ id: string }> => {
 export const listRuns = (limit: number, offset: number): Promise<RunList> =>
   json<RunList>(`/runs?limit=${limit}&offset=${offset}`);
 
-export const getRun = (id: string): Promise<RunRow> => json<RunRow>(`/runs/${encodeURIComponent(id)}`);
+export const getRun = (id: string): Promise<RunDetail> => json<RunDetail>(`/runs/${encodeURIComponent(id)}`);
 
 export const stopRun = (id: string): Promise<{ status: string }> =>
   json(`/runs/${encodeURIComponent(id)}/stop`, { method: "POST" }, { code: true, serverMessage: true });
