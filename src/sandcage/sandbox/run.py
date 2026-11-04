@@ -223,6 +223,16 @@ class SandboxRun:
             return
         self._state.session.add_layer(layer)
 
+    def run_harness_command(self, command: str) -> CommandResult:
+        """Run one of the harness's *own* commands in the sandbox (the verifier's test
+        run), outside the agent's gate, with the output masked. No agent action can reach
+        this; the caller decides which commands are allowed (the verifier's allow-list).
+        Same container, same hardening, same kill-all after the command."""
+        outcome = self._open().runner.run(command)
+        return CommandResult(
+            outcome.exit_code, mask(outcome.output), outcome.truncated, outcome.timed_out
+        )
+
     def read_text(self, path: str) -> str | None:
         """The workspace view (for the diff guard and anything else that must see it)."""
         return self._open().workspace.read_text(path)
