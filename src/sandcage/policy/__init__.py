@@ -6,7 +6,7 @@ Evaluate through a :class:`PolicySession` (one per run). The stateless
 
 from sandcage.policy.engine import PolicyEngine
 from sandcage.policy.rulebook import DEFAULT_RULEBOOK_PATH, Rulebook, load_rulebook
-from sandcage.policy.session import PolicySession, RuleLayer, WorkspaceView
+from sandcage.policy.session import PolicyLockedError, PolicySession, RuleLayer, WorkspaceView
 from sandcage.policy.types import (
     Decision,
     PolicyDecision,
@@ -23,6 +23,7 @@ __all__ = [
     "PolicyDecision",
     "PolicyEngine",
     "PolicyError",
+    "PolicyLockedError",
     "PolicySession",
     "Risk",
     "RuleHit",

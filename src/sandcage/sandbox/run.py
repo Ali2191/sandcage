@@ -212,6 +212,17 @@ class SandboxRun:
         """Every web request this run made: URL (masked), host, address, status, bytes."""
         return tuple(self._open().egress)
 
+    def add_layer(self, layer: RuleLayer) -> None:
+        """Lock a layer (the approved plan) into the run's policy. Before :meth:`open` it
+        joins the layers the session starts with; after, it goes through
+        :meth:`PolicySession.add_layer`, which refuses once an action was evaluated."""
+        if self._state is None:
+            if self._finished:
+                raise RunClosedError("the run is closed")
+            self._layers = (*self._layers, layer)
+            return
+        self._state.session.add_layer(layer)
+
     def read_text(self, path: str) -> str | None:
         """The workspace view (for the diff guard and anything else that must see it)."""
         return self._open().workspace.read_text(path)

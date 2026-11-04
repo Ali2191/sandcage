@@ -48,6 +48,10 @@ class RuleLayer(Protocol):
     def hits(self, subject: Subject) -> Sequence[RuleHit]: ...
 
 
+class PolicyLockedError(RuntimeError):
+    """A layer was added after the session had already judged an action."""
+
+
 class PolicySession:
     def __init__(
         self,
@@ -78,6 +82,19 @@ class PolicySession:
         """Untrusted sources tainting the run right now, oldest read first."""
         active = set(self._windows) | self._sticky
         return tuple(sorted(active, key=lambda source: self._last_read.get(source, 0)))
+
+    @property
+    def layers(self) -> tuple[RuleLayer, ...]:
+        return self._layers
+
+    def add_layer(self, layer: RuleLayer) -> None:
+        """Lock in another layer (the approved plan). Allowed only before the first
+        :meth:`evaluate`: once an action has been judged, the policy can only change by
+        what an existing layer allows (an approved amendment). Taint state, including
+        scout flags set with :meth:`mark_suspicious`, is kept."""
+        if self._trail:
+            raise PolicyLockedError("the policy is locked: an action was already evaluated")
+        self._layers = (*self._layers, layer)
 
     def mark_suspicious(self, source: str) -> None:
         """Flag a file or URL as carrying instructions: once read, it taints the rest of
