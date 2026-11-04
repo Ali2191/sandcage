@@ -1,4 +1,4 @@
-.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker api
+.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker api panel-check
 
 check: lint types test env-check contract-check
 
@@ -37,3 +37,8 @@ test-docker:
 # The API on 127.0.0.1:8000 (scripted models unless LLM_PROVIDER says otherwise).
 api:
 	uv run --locked python -m sandcage.api
+
+# The web panel (frontend/): lint, typecheck, unit tests and the production build.
+# Needs `npm ci` in frontend/ once. The backend's `make check` does not run it.
+panel-check:
+	cd frontend && npm run check
