@@ -39,3 +39,42 @@ jobs:
         run: make sandbox-image
       - name: Docker-marked tests
         run: make test-docker
+
+  panel:
+    # The web panel: lint, types, unit tests and build, then Playwright against the mock API and
+    # against the real API (scripted models, host runner: no Docker needed).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.7"
+      - name: Install pinned tools
+        run: uv sync --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install the panel's dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Panel checks (lint, types, unit tests, build)
+        run: make panel-check
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: End to end against the mock API
+        run: npm run e2e
+        working-directory: frontend
+      - name: End to end against the real API
+        run: npm run e2e:real
+        working-directory: frontend
+      - name: Keep the Playwright output when a test failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: frontend/test-results
+          retention-days: 7
