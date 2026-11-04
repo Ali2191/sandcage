@@ -88,7 +88,8 @@ def test_every_emitted_event_validates_against_the_schema(runs: dict[str, Run]) 
     kinds = {event.kind for run in runs.values() for event in run.result.events}
     assert kinds >= {
         "understand", "scout", "plan", "approval_needed", "approval_resolved", "step",
-        "checkpoint", "breaker", "verify", "redteam", "deliver", "report", "stopped", "done",
+        "checkpoint", "breaker", "verify", "redteam", "deliver", "report", "learn", "stopped",
+        "done",
     }  # fmt: skip
 
 

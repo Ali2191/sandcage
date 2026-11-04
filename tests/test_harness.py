@@ -59,7 +59,7 @@ def test_the_demo_follows_the_walkthrough(tmp_path: Path) -> None:
         "step", "step", "step", "step",
         "breaker", "approval_needed", "approval_resolved", "breaker",
         "step", "step", "step", "checkpoint", "step", "step",
-        "verify", "redteam", "deliver", "report", "done",
+        "verify", "redteam", "deliver", "report", "learn", "done",
     ]  # fmt: skip
     plans = [e.state.value for e in result.events if isinstance(e, PlanEvent)]
     assert plans == ["proposed", "approved", "locked"]
@@ -304,7 +304,7 @@ def test_an_unanswered_question_stops_before_anything_runs(tmp_path: Path) -> No
     assert run.models.executor.calls == []
     kinds = run.kinds()
     assert "step" not in kinds
-    assert kinds[-4:] == ["redteam", "deliver", "report", "done"]  # not stopped: still reported
+    assert kinds[-5:] == ["redteam", "deliver", "report", "learn", "done"]  # still reported
 
 
 def test_a_refused_plan_runs_nothing_but_is_still_reported(tmp_path: Path) -> None:
@@ -346,7 +346,8 @@ def test_a_model_failure_mid_run_is_an_error_and_still_reported(tmp_path: Path) 
     run = run_scenario(tmp_path, models=scripted)
     assert run.result.status is RunStatus.ERROR
     assert "provider is down" in run.result.summary
-    assert isinstance(run.result.events[-2], ReportEvent)
+    assert isinstance(run.result.events[-3], ReportEvent)
+    assert run.result.events[-2].kind == "learn"
 
 
 def test_observe_mode_is_described_honestly(tmp_path: Path) -> None:

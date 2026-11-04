@@ -47,6 +47,7 @@ from sandcage.contract.events import (
     DecisionCounts,
     DoneEvent,
     Event,
+    LearnEvent,
     PlanEvent,
     PlanState,
     ResolvedBy,
@@ -63,6 +64,7 @@ from sandcage.events.store import Outputs
 from sandcage.harness.checkpoints import Checkpoints
 from sandcage.harness.deliver import Delivery, build_patch, summary_markdown
 from sandcage.harness.guards import Guards, Limits
+from sandcage.learn.suggest import suggest
 from sandcage.masking import mask
 from sandcage.plan.layer import AMENDMENT, PlanLayer, propose_amendment
 from sandcage.plan.planner import PlanError, file_tree, make_plan
@@ -129,6 +131,7 @@ class RunOptions:
     provider: str | None = None
     sandbox_runtime: str | None = None
     learned_suspicious: Sequence[str] = ()
+    learned_ids: Sequence[str] = ()  # rules already learned for this repo (become notes)
 
 
 @dataclass
@@ -175,6 +178,7 @@ class RunContext:
     delivery: Delivery | None = None
     report: Report | None = None
     rollbacks: int = 0
+    learned: LearnEvent | None = None
     run_reader: QuarantinedReader | None = None
     error: str | None = None
     _emit_lock: threading.Lock = field(default_factory=threading.Lock)
@@ -549,6 +553,29 @@ class ReportStage:
         return None
 
 
+class LearnStage:
+    phase = Phase.LEARN
+
+    def run(self, ctx: RunContext) -> RunStatus | None:
+        found = ctx.scout_map
+        suggestions, notes = suggest(
+            ctx.steps,
+            repo=ctx.options.repo,
+            scout_flags=sorted(found.flags.items()) if found else (),
+            suspicious_pages=_suspicious_pages(ctx),
+            learned_ids=ctx.options.learned_ids,
+        )
+        ctx.learned = LearnEvent(
+            run_id=ctx.run_id,
+            phase=Phase.LEARN,
+            ts=ctx.clock(),
+            suggestions=suggestions,
+            notes=notes,
+        )
+        ctx.emit(ctx.learned)
+        return None
+
+
 # --- helpers for the stages -------------------------------------------------------------------
 
 
@@ -817,7 +844,7 @@ class Harness:
         return RunStatus.FINISHED
 
     def _post(self, status: RunStatus) -> RunStatus:
-        for stage in (RedteamStage(), DeliverStage(), ReportStage(status)):
+        for stage in (RedteamStage(), DeliverStage(), ReportStage(status), LearnStage()):
             if self.ctx.is_stopped():  # checked again before delivery and before each stage
                 return RunStatus.STOPPED
             ended = self._safely(stage)
@@ -848,7 +875,9 @@ class Harness:
             blocked=delivery.blocked,
             report=ctx.report.data,
             report_md=ctx.report.markdown,
-            learn={},
+            learn=ctx.learned.model_dump(mode="json", include={"suggestions", "notes"})
+            if ctx.learned
+            else {},
         )
 
     def _summary(self, status: RunStatus) -> str:
