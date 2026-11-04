@@ -245,7 +245,7 @@ READER_PLAIN: Final = json.dumps(
 class Models:
     """One scripted client per role; each keeps its own message list."""
 
-    scenario: ScenarioId
+    scenario: str
     understand: ScriptedClient
     scout: ScriptedClient
     planner: ScriptedClient
@@ -268,23 +268,41 @@ class Models:
         }
 
 
+def models_from_script(
+    scenario: str,
+    first: list[str],
+    retry: list[str],
+    *,
+    ask: bool = False,
+    scout: str | None = None,
+    review: list[str] | None = None,
+) -> Models:
+    """A scripted model set around an executor script: ``first`` is the agent's first
+    attempt, ``retry`` what it does after verifier feedback. Every other role replays the
+    reply shapes the S4 parsers read. The Bench builds its scenarios with this."""
+    return Models(
+        scenario=scenario,
+        understand=ScriptedClient([understand_reply(ask=ask)]),
+        scout=ScriptedClient([scout if scout is not None else scout_reply()]),
+        planner=ScriptedClient([plan_reply()]),
+        executor=ScriptedClient([*first, *retry], when_done=FINISH),
+        executor_retry=retry,
+        verifier=ScriptedClient([], when_done=VERDICT_PASS),
+        redteam=ScriptedClient(review or [], when_done=REVIEW_CLEAN),
+        reader=ScriptedClient([], when_done=READER_PLAIN),
+    )
+
+
 def scripted_models(scenario: ScenarioId | str = ScenarioId.DEMO) -> Models:
     """The scripted model set for a scenario. An unknown id raises ``ValueError``."""
     chosen = ScenarioId(scenario)
     first, retry = executor_script(chosen)
     # skip_test: the verifier's deterministic checks fail the first attempt (tests still fail),
     # so the model is only asked once the fix is in; it passes it.
-    return Models(
-        scenario=chosen,
-        understand=ScriptedClient([understand_reply(ask=chosen is ScenarioId.CLARIFY)]),
-        scout=ScriptedClient([scout_reply()]),
-        planner=ScriptedClient([plan_reply()]),
-        executor=ScriptedClient([*first, *retry], when_done=FINISH),
-        executor_retry=retry,
-        verifier=ScriptedClient([], when_done=VERDICT_PASS),
-        redteam=ScriptedClient(
-            [REVIEW_SNEAKY] if chosen is ScenarioId.SNEAKY_URLLIB else [],
-            when_done=REVIEW_CLEAN,
-        ),
-        reader=ScriptedClient([], when_done=READER_PLAIN),
+    return models_from_script(
+        chosen.value,
+        first,
+        retry,
+        ask=chosen is ScenarioId.CLARIFY,
+        review=[REVIEW_SNEAKY] if chosen is ScenarioId.SNEAKY_URLLIB else None,
     )
