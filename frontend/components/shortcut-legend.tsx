@@ -36,7 +36,7 @@ export function ShortcutLegend() {
         aria-expanded={open}
         data-interactive={interactive}
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-3 right-3 z-40 flex size-8 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-bar font-mono text-[13px] text-muted hover:border-fg hover:text-fg pointer-coarse:hidden"
+        className="fixed bottom-3 right-3 z-40 flex size-8 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-bar font-mono text-[13px] text-muted hover:border-fg hover:text-fg pointer-coarse:hidden max-sm:hidden"
       >
         ?
       </button>

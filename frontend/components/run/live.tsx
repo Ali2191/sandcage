@@ -22,7 +22,7 @@ import {
 import { isTypingTarget } from "@/lib/keys";
 import { rewind } from "@/lib/api";
 import { Body, Side } from "../shell";
-import { Button, Kbd, Pill, cx } from "../ui";
+import { Button, Kbd, Pill } from "../ui";
 import { TopBarSlot } from "../top-bar-slot";
 import { DecisionBanner } from "../decision-banner";
 import { useApproval } from "../use-approval";
@@ -200,4 +200,3 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
     </Body>
   );
 }
-export { cx };
