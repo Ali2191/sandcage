@@ -407,6 +407,10 @@ class StreamFailureError(Exception):
     """The event stream check cannot go on; the message says why."""
 
 
+class StreamUntestedError(Exception):
+    """The event stream cannot be tested right now, and that is not a failure."""
+
+
 def open_stream(session: Session, run_id: str, last_id: int | None) -> http.client.HTTPResponse:
     headers = {"Accept": "text/event-stream", "X-Access-Code": session.code or ""}
     if last_id is not None:
@@ -451,7 +455,7 @@ def start_scripted_run(session: Session) -> str:
     if reply.status == 429:
         raise StreamFailureError("rate limited (the per-client hourly limit): wait and run again")
     if reply.status == 503:
-        raise StreamFailureError("the demo is paused (kill switch on): no run can be started")
+        raise StreamUntestedError("the demo is paused (kill switch on): no run can be started")
     if reply.status != 202:
         raise StreamFailureError(f"starting the scripted run answered {reply.status}")
     return str(json.loads(reply.text())["id"])
@@ -465,6 +469,8 @@ def check_streaming(session: Session) -> list[Check]:
     try:
         run_id = start_scripted_run(session)
         return stream_checks(session, run_id)
+    except StreamUntestedError as problem:
+        return [Check(name, UNTESTED, str(problem)) for name in names]
     except StreamFailureError as problem:
         return [Check(name, FAIL, str(problem)) for name in names]
     except OSError as problem:

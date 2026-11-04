@@ -219,9 +219,14 @@ def test_plain_docker_is_a_loud_warning_not_a_failure(tmp_path: Path) -> None:
 
 
 def test_a_paused_demo_is_checked_against_the_kill_switch(tmp_path: Path) -> None:
-    with edge(CODE, "paused") as (url, _):
-        _, rows, output = verify(url, tmp_path)
+    with edge(CODE, "paused") as (url, state):
+        status, rows, output = verify(url, tmp_path)
     assert rows["kill switch honoured"] == "PASS", output
+    # A paused demo cannot start the scripted run: the stream checks are untested, not failed.
+    assert rows["event stream streams"] == "UNTESTED"
+    assert rows["Last-Event-ID resume"] == "UNTESTED"
+    assert status == 0, output
+    assert state.started == 0
 
 
 @pytest.mark.parametrize(
