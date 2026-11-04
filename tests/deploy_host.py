@@ -176,6 +176,18 @@ class FakeHost:
     def key_file(self, key: str = LLM_KEY) -> Path:
         return self.private_file("key", key)
 
+    def system_path_without(self, command: str) -> str:
+        """A PATH that has the fakes and every system command except ``command`` (a machine
+        that never installed it, even if the one running the tests has it in /usr/bin)."""
+        hidden = self.root / f"sysbin-without-{command}"
+        hidden.mkdir(exist_ok=True)
+        for directory in ("/usr/bin", "/bin", "/usr/sbin", "/sbin"):
+            for entry in Path(directory).iterdir():
+                link = hidden / entry.name
+                if entry.name != command and not link.exists():
+                    link.symlink_to(entry)
+        return f"{self.bin}:{hidden}"
+
     # --- running -----------------------------------------------------------------------------
 
     def environment(self, extra: dict[str, str] | None = None) -> dict[str, str]:

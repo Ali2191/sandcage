@@ -418,7 +418,11 @@ def test_not_being_root_stops_before_anything_happens(host: FakeHost) -> None:
 def test_a_missing_docker_is_named_with_the_runbook(host: FakeHost) -> None:
     (host.bin / "docker").unlink()
     done = host.run(
-        "--up", "--no-pull", "--email", EMAIL, env={"PATH": f"{host.bin}:/usr/bin:/bin"}
+        "--up",
+        "--no-pull",
+        "--email",
+        EMAIL,
+        env={"PATH": host.system_path_without("docker")},
     )
     assert done.code != 0
     assert "docker is not installed" in done.stderr
