@@ -178,7 +178,7 @@ def test_a_new_file_gets_the_latest_schema_and_reopening_changes_nothing(tmp_pat
     path = tmp_path / "db.sqlite"
     EventStore(path).close()
     db = sqlite3.connect(path)
-    assert db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 3
+    assert db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 4
     tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     assert {"runs", "events", "outputs", "daily_usage"} <= tables
     EventStore(path).close()
@@ -261,6 +261,7 @@ def test_release_flips_blocked_and_notes_it_in_summary_and_report(store: EventSt
     assert released.report_md.startswith("# Report")
     assert "Released by a human" in released.report_md
     assert released.report == {"delivery_blocked": False, "released_by_human": True}
+    assert store.get_run(RUN_ID).released_by_human is True  # the run row carries it
     assert store.release(RUN_ID, "again") is False
     assert store.release(OTHER, "nothing there") is False
 
@@ -271,3 +272,44 @@ def test_events_from_the_store_are_typed(store: EventStore) -> None:
         store.append(event)
     steps = [e for e in store.events(RUN_ID) if isinstance(e, StepEvent)]
     assert [s.step for s in steps] == list(range(1, 10))
+
+
+def test_a_new_run_is_not_released(store: EventStore) -> None:
+    _start(store)
+    assert store.get_run(RUN_ID).released_by_human is False
+    store.save_outputs(RUN_ID, _outputs(False))
+    assert store.release(RUN_ID, "nothing was blocked") is False
+    assert store.get_run(RUN_ID).released_by_human is False
+
+
+def test_v4_backfills_released_by_human_from_reports(tmp_path: Path) -> None:
+    path = tmp_path / "v3.sqlite"
+    db = sqlite3.connect(path, isolation_level=None)
+    migrate(db, target=3)
+    db.execute(
+        "INSERT INTO runs (id, repo, task, guard, status, created, tokens) VALUES"
+        " ('aaaaaaaaaaaa', 'r', 't', 1, 'finished', ?, 0),"
+        " ('bbbbbbbbbbbb', 'r', 't', 1, 'finished', ?, 0)",
+        (DAY_ONE, DAY_ONE),
+    )
+    for run_id, released in (("aaaaaaaaaaaa", True), ("bbbbbbbbbbbb", False)):
+        db.execute(
+            "INSERT INTO outputs VALUES (?, '', '', 0, ?, '', '{}')",
+            (run_id, '{"released_by_human": %s}' % ("true" if released else "false")),
+        )
+    db.close()
+    store = EventStore(path)
+    assert store.get_run("aaaaaaaaaaaa").released_by_human is True
+    assert store.get_run("bbbbbbbbbbbb").released_by_human is False
+
+
+def test_last_event_id_of_a_run_and_of_one_kind(store: EventStore) -> None:
+    _start(store)
+    _start(store, OTHER)
+    assert store.last_event_id(RUN_ID) == 0
+    assert store.last_event_id(RUN_ID, kind="done") == 0
+    stored = [store.append(e.model_copy(update={"id": 0})) for e in demo_events()]
+    store.append(demo_events()[0].model_copy(update={"id": 0, "run_id": OTHER}))
+    assert store.last_event_id(RUN_ID) == stored[-1].id
+    assert store.last_event_id(RUN_ID, kind="done") == stored[-1].id
+    assert store.last_event_id(RUN_ID, kind="understand") == stored[0].id

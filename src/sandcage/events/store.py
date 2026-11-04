@@ -8,6 +8,8 @@
 - **outputs**: patch, SUMMARY.md, the blocked flag, report (JSON and Markdown), learn.
 - **daily_usage**: runs started and tokens spent per UTC day. Tokens are added as they are
   spent, so a run cut off by a restart still counts.
+- ``runs.released_by_human`` (v4): a release happens after ``done``, so it cannot be an
+  event; the run row carries it.
 
 Schema changes are numbered migrations tracked in ``PRAGMA user_version``; an older file
 is upgraded on open, and a file from a newer version is refused (fail closed). One shared
@@ -45,6 +47,10 @@ from sandcage.masking import mask
 
 RUN_ID: Final = re.compile(r"[0-9a-f]{12}")
 MAX_PAGE: Final = 100
+_SELECT_RUNS: Final = (
+    "SELECT id, repo, task, guard, status, created, finished, provider, model, tokens,"
+    " summary, released_by_human FROM runs"
+)
 
 
 class StoreError(Exception):
@@ -134,10 +140,23 @@ def _v3_daily_usage(db: sqlite3.Connection) -> None:
     )
 
 
+def _v4_released_by_human(db: sqlite3.Connection) -> None:
+    """A release comes after ``done``, so the run row carries it (backfilled from the
+    reports of runs released before this column existed)."""
+    db.execute("ALTER TABLE runs ADD COLUMN released_by_human INTEGER NOT NULL DEFAULT 0")
+    released = [
+        run_id
+        for run_id, report in db.execute("SELECT run_id, report FROM outputs")
+        if isinstance(found := json.loads(report), dict) and found.get("released_by_human") is True
+    ]
+    db.executemany("UPDATE runs SET released_by_human = 1 WHERE id = ?", [(r,) for r in released])
+
+
 MIGRATIONS: Final[tuple[Callable[[sqlite3.Connection], None], ...]] = (
     _v1_runs_and_events,
     _v2_outputs,
     _v3_daily_usage,
+    _v4_released_by_human,
 )
 SCHEMA_VERSION: Final = len(MIGRATIONS)
 
@@ -172,6 +191,7 @@ class RunRecord:
     model: str | None
     tokens: int
     done: DoneEvent | None
+    released_by_human: bool = False
 
 
 @dataclass(frozen=True)
@@ -259,8 +279,7 @@ class EventStore:
         _check_id(run_id)
         with self._lock:
             row = self._db.execute(
-                "SELECT id, repo, task, guard, status, created, finished, provider, model,"
-                " tokens, summary FROM runs WHERE id = ?",
+                _SELECT_RUNS + " WHERE id = ?",
                 (run_id,),
             ).fetchone()
         if row is None:
@@ -273,8 +292,7 @@ class EventStore:
             raise StoreError(f"limit must be 1 to {MAX_PAGE} and offset at least 0")
         with self._lock:
             rows = self._db.execute(
-                "SELECT id, repo, task, guard, status, created, finished, provider, model,"
-                " tokens, summary FROM runs ORDER BY created DESC, id DESC LIMIT ? OFFSET ?",
+                _SELECT_RUNS + " ORDER BY created DESC, id DESC LIMIT ? OFFSET ?",
                 (limit, offset),
             ).fetchall()
             (total,) = self._db.execute("SELECT COUNT(*) FROM runs").fetchone()
@@ -334,6 +352,17 @@ class EventStore:
                 (run_id, after_id),
             ).fetchall()
         return [parse_event(json.loads(row[0])) for row in rows]
+
+    def last_event_id(self, run_id: str, *, kind: str | None = None) -> int:
+        """The newest stored event id of the run (of one kind), or 0 when there is none."""
+        query = "SELECT MAX(id) FROM events WHERE run_id = ?"
+        params: tuple[str, ...] = (run_id,)
+        if kind is not None:
+            query += " AND kind = ?"
+            params = (run_id, kind)
+        with self._lock:
+            (found,) = self._db.execute(query, params).fetchone()
+        return int(found or 0)
 
     def wait_for_events(
         self, run_id: str, *, after_id: int, timeout: float
@@ -404,6 +433,7 @@ class EventStore:
                 " WHERE run_id = ?",
                 (summary_md.rstrip() + line, json.dumps(report), report_md.rstrip() + line, run_id),
             )
+            self._db.execute("UPDATE runs SET released_by_human = 1 WHERE id = ?", (run_id,))
         return True
 
     # --- daily counters ----------------------------------------------------------------
@@ -432,7 +462,20 @@ class EventStore:
 
 
 def _run(row: tuple[Any, ...]) -> RunRecord:
-    run_id, repo, task, guard, status, created, finished, provider, model, tokens, summary = row
+    (
+        run_id,
+        repo,
+        task,
+        guard,
+        status,
+        created,
+        finished,
+        provider,
+        model,
+        tokens,
+        summary,
+        released,
+    ) = row
     done = None
     if isinstance(summary, str):
         parsed = parse_event(json.loads(summary))
@@ -449,6 +492,7 @@ def _run(row: tuple[Any, ...]) -> RunRecord:
         model=None if model is None else str(model),
         tokens=int(tokens),
         done=done,
+        released_by_human=bool(released),
     )
 
 
