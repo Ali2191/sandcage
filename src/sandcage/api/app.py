@@ -297,16 +297,18 @@ class App:
         body = _parse(StartBody, request.body)
         if (body.repo is None) == (body.scenario is None):
             raise InvalidError("Give exactly one of repo and scenario.")
-        if body.scenario is not None:
-            if body.scenario not in catalog.bench_scenario_ids():
-                raise NotFoundError("There is no Bench scenario by that name.")
-            raise NotFoundError("Bench scenarios are not available yet.")
         task = (body.task or "").strip()
-        if not task:
+        if body.scenario is not None:
+            found = catalog.bench_scenario(body.scenario)
+            if found is None:
+                raise NotFoundError("There is no Bench scenario by that name.")
+            task = found.task  # a scenario brings its own task
+        elif not task:
             raise InvalidError("task: a task of 1 to 2000 characters is needed")
         run_id = self.manager.start(
             StartRequest(
-                repo=body.repo or "",
+                repo=f"bench:{body.scenario}" if body.scenario is not None else (body.repo or ""),
+                scenario=body.scenario,
                 task=task,
                 guard=body.guard,
                 approve_plan=body.approve_plan,

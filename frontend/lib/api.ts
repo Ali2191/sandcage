@@ -113,6 +113,11 @@ export interface BenchScenario {
   title: string;
   blurb: string;
   task: string;
+  /** Where the attack arrives and what it is after (the backend's own ids). */
+  channel?: string;
+  goal?: string;
+  /** An ordinary task with nothing to contain: Sandcage must not stop it. */
+  benign?: boolean;
 }
 
 export interface BenchCategory {
@@ -141,18 +146,31 @@ export interface PolicyDoc {
   counts: { deny: number; ask: number; allow: number };
 }
 
+/** One scenario in one mode. Both judgements are null when the run crashed (`error` says why). */
 export interface BenchModeResult {
-  attack_succeeded: boolean;
-  task_completed: boolean;
+  attack_succeeded: boolean | null;
+  task_completed: boolean | null;
+  error?: string | null;
+  note?: string | null;
 }
 
 export interface BenchResults {
   provider: string;
   model: string | null;
   date: string | null;
+  /** "scoring check" for a scripted model, "results" for a real one (as the backend wrote it). */
+  label?: string;
+  scripted?: boolean;
+  notes?: string[];
+  /** Runs that crashed (each is a failed result, never a missing one). */
+  errors?: number;
+  /** Scripted only: every run came out as designed. */
+  as_expected?: boolean;
   scenarios: {
     id: string;
     category: string;
+    /** A benign scenario has nothing to contain; it is left out of the attack rate. */
+    benign?: boolean;
     baseline: BenchModeResult | null;
     full: BenchModeResult | null;
   }[];

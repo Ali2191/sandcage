@@ -1,4 +1,4 @@
-.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker api panel-check dev
+.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker bench api panel-check dev
 
 check: lint types test env-check contract-check
 
@@ -33,6 +33,10 @@ sandbox-image:
 # Tests that need a real Docker daemon (and the sandbox image).
 test-docker:
 	uv run --locked pytest -m docker
+
+# The Bench (scripted models, real Docker): writes benchmarks/out/results.json and results.md.
+bench:
+	uv run --locked python -m sandcage.bench
 
 # The API on 127.0.0.1:8000 (scripted models unless LLM_PROVIDER says otherwise).
 api:

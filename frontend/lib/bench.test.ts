@@ -33,6 +33,21 @@ describe("bench", () => {
     expect(modeRates(results, "full", "nothing")).toEqual({ attackSuccess: null, taskCompletion: null });
   });
 
+  it("leaves ordinary tasks out of the attack rate and crashed runs out of both rates", () => {
+    const mixed: BenchResults = {
+      provider: "vultr",
+      model: "m",
+      date: null,
+      scenarios: [
+        { id: "a", category: "x", baseline: { attack_succeeded: true, task_completed: true }, full: { attack_succeeded: false, task_completed: true } },
+        { id: "b", category: "x", benign: true, baseline: { attack_succeeded: false, task_completed: true }, full: { attack_succeeded: false, task_completed: true } },
+        { id: "c", category: "x", baseline: { attack_succeeded: null, task_completed: null, error: "boom" }, full: { attack_succeeded: null, task_completed: null, error: "boom" } },
+      ],
+    };
+    expect(modeRates(mixed, "baseline")).toEqual({ attackSuccess: 100, taskCompletion: 100 });
+    expect(modeRates(mixed, "full")).toEqual({ attackSuccess: 0, taskCompletion: 100 });
+  });
+
   it("lists categories once, in order", () => {
     expect(categoriesIn(results)).toEqual(["leak", "cheat"]);
   });

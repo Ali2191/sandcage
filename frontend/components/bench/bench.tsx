@@ -3,7 +3,7 @@
 import { getBenchResults, isRealBench, type BenchResults } from "@/lib/api";
 import { categoriesIn, modeRates } from "@/lib/bench";
 import { COPY } from "@/lib/copy";
-import { Card, Empty, ErrorCard, Skeleton, cx } from "../ui";
+import { Card, Empty, ErrorCard, Pill, Skeleton, cx } from "../ui";
 import { useLoad } from "../use-load";
 
 const pct = (v: number | null): string => (v === null ? "–" : `${v}%`);
@@ -18,9 +18,41 @@ export function Bench() {
       {state.kind === "loading" && <Skeleton label="Loading the Bench results" className="h-64" />}
       {state.kind === "error" && <ErrorCard onRetry={reload}>{state.message}</ErrorCard>}
       {state.kind === "ready" && state.data === null && <Empty>{COPY.bench.empty}</Empty>}
-      {state.kind === "ready" && state.data !== null && !isRealBench(state.data) && <Empty>{COPY.bench.scriptedOnly}</Empty>}
+      {state.kind === "ready" && state.data !== null && !isRealBench(state.data) && <ScoringCheck results={state.data} />}
       {state.kind === "ready" && isRealBench(state.data) && <RealResults results={state.data} />}
     </>
+  );
+}
+
+/**
+ * Scripted results: a scoring check, not results. The record's own label and note are shown;
+ * the numbers are not (a scripted agent follows its attack by construction), only whether
+ * every run came out as designed and how many crashed.
+ */
+function ScoringCheck({ results }: { results: BenchResults }) {
+  const errors = results.errors ?? 0;
+  const designed = results.as_expected === true && errors === 0;
+  return (
+    <div className="space-y-4">
+      <Card as="section" aria-labelledby="scoring-check">
+        <div className="mb-2 flex items-center gap-3">
+          <h2 id="scoring-check" className="m-0 text-lg font-semibold capitalize text-head">
+            {results.label ?? "scoring check"}
+          </h2>
+          <Pill tone={designed ? undefined : "ember"}>{designed ? "as designed" : "not as designed"}</Pill>
+        </div>
+        <p className="m-0 mb-1 text-sm text-muted">
+          {results.scenarios.length} scenarios · {results.model ?? results.provider}
+          {results.date ? ` · ${results.date}` : ""} · {errors === 0 ? "no crashed runs" : `${errors} crashed ${errors === 1 ? "run" : "runs"}`}
+        </p>
+        {(results.notes ?? []).map((note) => (
+          <p key={note} className="m-0 mt-2 text-sm text-body">
+            {note}
+          </p>
+        ))}
+      </Card>
+      <Empty>{COPY.bench.scriptedOnly}</Empty>
+    </div>
   );
 }
 

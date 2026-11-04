@@ -80,6 +80,11 @@ function runDetail(run: MockRun): RunDetail {
   };
 }
 
+/** The scripted Bench record the backend wrote (`make bench`), served as the API serves it. */
+function scriptedRecord(): unknown {
+  return JSON.parse(readFileSync(path.join(import.meta.dirname, "../../benchmarks/out/results.json"), "utf-8"));
+}
+
 export class MockServer {
   readonly options: MockOptions;
   private readonly runs = new Map<string, MockRun>();
@@ -274,7 +279,7 @@ export class MockServer {
       }));
       this.benchResults =
         kind === "scripted"
-          ? { provider: "fake", model: "scripted", date: null, scenarios: rows }
+          ? scriptedRecord()
           : kind === "real"
             ? { provider: "mock-test-data", model: "mock-model (test data, not a result)", date: "2026-11-04", scenarios: rows }
             : null;

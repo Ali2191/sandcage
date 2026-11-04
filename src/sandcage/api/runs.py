@@ -34,6 +34,9 @@ from sandcage.agent.scenarios import ScenarioId, scripted_models
 from sandcage.api.errors import ConflictError, InvalidError, NotFoundError, UnavailableError
 from sandcage.api.guard import DemoGuard
 from sandcage.api.settings import ProviderSettings
+from sandcage.bench import repo as bench_repo
+from sandcage.bench.catalogue import find as find_scenario
+from sandcage.bench.runner import models_for
 from sandcage.contract.approval import Approval, ApprovalAnswerError, Resolution
 from sandcage.contract.common import Phase
 from sandcage.contract.events import (
@@ -95,6 +98,7 @@ class StartRequest:
     approve_plan: bool = False
     done_criteria: tuple[str, ...] = ()
     fake_scenario: str | None = None
+    scenario: str | None = None  # a Bench scenario id: its repo is built for this run only
 
 
 ModelsFactory = Callable[[StartRequest], Models]
@@ -126,6 +130,7 @@ class _Active:
     done_sent: bool = False
     finished: threading.Event = field(default_factory=threading.Event)
     close_lock: threading.Lock = field(default_factory=threading.Lock)
+    scratch: Path | None = None  # a Bench scenario's temp repo, removed when the run ends
 
     def stopping(self) -> bool:
         """A method, so every check really reads the flag another thread may set."""
@@ -245,7 +250,15 @@ class RunManager:
         """Validate, then admit atomically (slot, demo limits, run row) and start the
         thread. Raises an :class:`ApiError` subclass the HTTP layer maps to a status."""
         path = self._repos.get(request.repo)
-        if path is None:
+        if request.scenario is not None:
+            if find_scenario(request.scenario) is None:
+                raise NotFoundError("There is no Bench scenario by that name.")
+            if request.fake_scenario is not None:
+                raise InvalidError(
+                    "A Bench scenario brings its own script; fake_scenario is not allowed."
+                )
+            path = None
+        elif path is None:
             raise NotFoundError("There is no demo repo by that name.")
         if request.fake_scenario is not None:
             if not self._provider.scripted:
@@ -286,6 +299,9 @@ class RunManager:
 
     def _default_models(self, request: StartRequest) -> Models:
         if self._provider.scripted:
+            chosen = find_scenario(request.scenario) if request.scenario else None
+            if chosen is not None:
+                return models_for(chosen)
             scripted = scripted_models(request.fake_scenario or ScenarioId.DEMO)
             return Models(
                 understand=scripted.understand,
@@ -309,7 +325,7 @@ class RunManager:
 
     # --- the run thread --------------------------------------------------------------------
 
-    def _run(self, active: _Active, request: StartRequest, path: Path, cap: int) -> None:
+    def _run(self, active: _Active, request: StartRequest, path: Path | None, cap: int) -> None:
         run_id = active.id
         try:
             self._execute(active, request, path, cap)
@@ -322,6 +338,8 @@ class RunManager:
             try:
                 active.close_sandbox()
             finally:
+                if active.scratch is not None:
+                    bench_repo.remove(active.scratch)
                 if not active.done_sent:  # the harness never reached done
                     status = RunStatus.STOPPED if active.stop_requested else RunStatus.ERROR
                     summary = STOPPED_SUMMARY if active.stop_requested else "The run failed."
@@ -329,8 +347,14 @@ class RunManager:
                 self._free(run_id)
                 active.finished.set()
 
-    def _execute(self, active: _Active, request: StartRequest, path: Path, cap: int) -> None:
+    def _execute(self, active: _Active, request: StartRequest, path: Path | None, cap: int) -> None:
         run_id = active.id
+        if path is None:  # a Bench scenario: build its repo for this run
+            chosen = find_scenario(request.scenario or "")
+            if chosen is None:  # start() checked; kept for the type checker
+                raise NotFoundError("There is no Bench scenario by that name.")
+            path = bench_repo.materialize(chosen, self._temp_root)
+            active.scratch = path
         engine = self._engine_factory()
         reserved = [spec.rule_id for spec in engine.rulebook.all_rules]
         layer = LearnedLayer(load_rules(self._learned_path, reserved=reserved), request.repo)

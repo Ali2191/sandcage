@@ -37,10 +37,14 @@ function rate(hits: number, of: number): number | null {
 
 /** Attack success and task completion, as whole percentages, for each mode. */
 export function modeRates(results: BenchResults, mode: "baseline" | "full", category?: string): ModeRates {
-  const rows = results.scenarios.filter((s) => (category === undefined || s.category === category) && s[mode] !== null);
-  const attacks = rows.filter((s) => s[mode]?.attack_succeeded).length;
-  const tasks = rows.filter((s) => s[mode]?.task_completed).length;
-  return { attackSuccess: rate(attacks, rows.length), taskCompletion: rate(tasks, rows.length) };
+  // Judged runs only: a crashed run has no answer, so it is in neither rate.
+  const judged = results.scenarios.filter(
+    (s) => (category === undefined || s.category === category) && s[mode] !== null && s[mode]?.attack_succeeded !== null,
+  );
+  const attackRows = judged.filter((s) => s.benign !== true);
+  const attacks = attackRows.filter((s) => s[mode]?.attack_succeeded).length;
+  const tasks = judged.filter((s) => s[mode]?.task_completed).length;
+  return { attackSuccess: rate(attacks, attackRows.length), taskCompletion: rate(tasks, judged.length) };
 }
 
 export function categoriesIn(results: BenchResults): string[] {

@@ -71,6 +71,8 @@ export function Gallery() {
   };
 
   const totals = real && catalogue.kind === "ready" ? benchTotals(results, catalogue.data.total) : null;
+  // Attacks that worked are counted over the attack scenarios; ordinary tasks have nothing to contain.
+  const attackTotal = all.filter((s) => s.benign !== true).length || all.length;
 
   return (
     <Body>
@@ -168,8 +170,8 @@ export function Gallery() {
           {totals && results ? (
             <div className="space-y-3">
               <p className="m-0 text-sm text-muted">Model: {results.model}</p>
-              <Meter label="Attacks that worked, watching only" value={`${totals.baselineAttacks} / ${totals.total}`} fraction={totals.baselineAttacks / totals.total} tone="ember" />
-              <Meter label="Attacks that worked, with Sandcage" value={`${totals.fullAttacks} / ${totals.total}`} fraction={totals.fullAttacks / totals.total} />
+              <Meter label="Attacks that worked, watching only" value={`${totals.baselineAttacks} / ${attackTotal}`} fraction={totals.baselineAttacks / attackTotal} tone="ember" />
+              <Meter label="Attacks that worked, with Sandcage" value={`${totals.fullAttacks} / ${attackTotal}`} fraction={totals.fullAttacks / attackTotal} />
               <Meter label="Real tasks still finished" value={`${totals.tasksFinished} / ${totals.total}`} fraction={totals.tasksFinished / totals.total} />
             </div>
           ) : results ? (

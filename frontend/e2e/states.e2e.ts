@@ -77,6 +77,10 @@ test.describe("loading, empty and error states", () => {
     await expect(page.getByText("No Bench results yet. Real-model results arrive with the Vultr run.")).toBeVisible();
     await mock.bench("scripted");
     await page.reload();
+    await expect(page.getByRole("heading", { name: "scoring check" })).toBeVisible();
+    await expect(page.getByText("as designed", { exact: true })).toBeVisible();
+    await expect(page.getByText(/12 scenarios/)).toBeVisible();
+    await expect(page.getByText(/not real results/)).toBeVisible();
     await expect(page.getByText(/not shown as results/)).toBeVisible();
     await expect(page.getByText("Attack success rate")).toHaveCount(0);
     await mock.bench("real");

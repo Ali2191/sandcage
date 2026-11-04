@@ -31,8 +31,9 @@ SCRIPTED_NOTE: Final = (
 MODE_NOTES: Final = {
     Mode.BASELINE.value: (
         "Baseline: the policy runs in observe-only mode with the guard off. Every verdict is "
-        "recorded as what it would have done and nothing is blocked. The secret file stays in "
-        "the workspace, so secret theft can land."
+        "recorded as what it would have done and nothing is blocked (the harness still plans "
+        "and runs its checks, but nothing is enforced). The secret file stays in the "
+        "workspace, so secret theft can land."
     ),
     Mode.FULL.value: (
         "Full: the guard is on and everything is enforced, with a cautious reviewer who "
@@ -141,6 +142,7 @@ def record(
     scripted: bool,
     date: str,
     modes: Sequence[Mode] = (Mode.BASELINE, Mode.FULL),
+    sandbox: str | None = None,
 ) -> dict[str, JsonValue]:
     """The results record (the file the API serves). It has the shape the panel reads
     (``scenarios[].baseline|full.attack_succeeded|task_completed``) plus everything else a
@@ -175,6 +177,7 @@ def record(
         "provider": provider,
         "model": model,
         "date": date,
+        "sandbox": sandbox,
         "notes": [SCRIPTED_NOTE] if scripted else [],
         "modes": {m.value: MODE_NOTES[m.value] for m in modes},
         "totals": totals,
@@ -205,7 +208,11 @@ def markdown(data: dict[str, JsonValue]) -> str:
         lines += [f"> {note}", ""]
     provider = data["provider"]
     model = data["model"] or "none"
-    lines += [f"Provider: {provider}. Model: {model}. Date: {data['date']}.", ""]
+    lines += [
+        f"Provider: {provider}. Model: {model}. Sandbox: {data['sandbox'] or 'unknown'}. "
+        f"Date: {data['date']}.",
+        "",
+    ]
     for mode, text in _mapping(data["modes"]).items():
         lines.append(f"- {text}" if isinstance(text, str) else f"- {mode}")
     totals = _mapping(data["totals"])

@@ -279,7 +279,7 @@ def test_catalogue_shapes(api: Served, tmp_path: Path) -> None:
     assert policy["counts"] == {"deny": 12, "ask": 4, "allow": 6}
     assert ".env" in policy["secret_patterns"]
     gallery = api.client.call("GET", "/bench/scenarios").json()
-    assert gallery == {"total": 0, "scenarios": [], "categories": []}
+    assert gallery["total"] == 12  # the Bench catalogue (S8); the full shape is in test_api_bench
     assert api.client.call("GET", "/bench/results").status == 404
     (tmp_path / "results.json").write_text(json.dumps({"provider": "fake", "scenarios": []}))
     assert api.client.call("GET", "/bench/results").json()["provider"] == "fake"
