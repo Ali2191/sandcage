@@ -131,6 +131,7 @@ data: {"kind": "step", "id": 41, "run_id": "...", ...}
 | `DEMO_TRUST_PROXY` | `true` only behind our own proxy: client = last `X-Forwarded-For` hop |
 | `PANEL_ORIGIN` | the one CORS origin (unset behind Caddy) |
 | `LLM_PROVIDER` | `scripted` (default), `vultr` or `openai`; `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` |
+| `LLM_RETRIES` | how often a model call is retried after a 408/409/429/5xx, `0` to `8` (default 8); `0` fails on the first error |
 | `SANDCAGE_DATA_DIR` (`data`), `SANDCAGE_DB` (`<data>/sandcage.db`) | event log and `learned.yaml`; one API process per log (lock file) |
 | `SANDCAGE_API_HOST` (`127.0.0.1`), `SANDCAGE_API_PORT` (8000) | where it listens |
 | `SANDBOX_RUNTIME` | `runc` (default) or `runsc` (trusted only after the gVisor banner check) |

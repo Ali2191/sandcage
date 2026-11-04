@@ -300,7 +300,10 @@ class RunManager:
         if key is None or model is None:  # start() checked; kept for the type checker
             raise UnavailableError("The model provider is not configured.")
         client: ChatClient = OpenAIChatClient(
-            base_url=self._provider.base_url, api_key=key, model=model
+            base_url=self._provider.base_url,
+            api_key=key,
+            model=model,
+            retries=self._provider.retries,
         )
         return Models(client, client, client, client, client, client, client)
 

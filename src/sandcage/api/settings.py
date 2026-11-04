@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
 
+from sandcage.agent.llm import DEFAULT_RETRIES
+
 MIN_CODE_LENGTH: Final = 12
 BODY_LIMIT: Final = 64 * 1024
 APPROVAL_TIMEOUT: Final = 120.0
@@ -94,6 +96,8 @@ class ProviderSettings:
     base_url: str = VULTR_BASE_URL
     api_key: str | None = field(default=None, repr=False)
     model: str | None = None
+    #: How often a model call is retried after a 408, 409, 429 or 5xx (0 = never).
+    retries: int = DEFAULT_RETRIES
 
     @property
     def scripted(self) -> bool:
@@ -124,6 +128,7 @@ class ProviderSettings:
             base_url=base_url,
             api_key=env.get("LLM_API_KEY", "").strip() or None,
             model=env.get("LLM_MODEL", "").strip() or None,
+            retries=_retries(env),
         )
 
 
@@ -171,6 +176,15 @@ def _flag(env: Mapping[str, str], name: str) -> bool:
     if value in _FALSE:
         return False
     raise SettingsError(f"{name} must be true or false")
+
+
+def _retries(env: Mapping[str, str]) -> int:
+    raw = env.get("LLM_RETRIES", "").strip()
+    if not raw:
+        return DEFAULT_RETRIES
+    if not raw.isdigit() or int(raw) > DEFAULT_RETRIES:
+        raise SettingsError(f"LLM_RETRIES must be a whole number from 0 to {DEFAULT_RETRIES}")
+    return int(raw)
 
 
 def _count(env: Mapping[str, str], name: str, default: int) -> int:

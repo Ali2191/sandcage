@@ -10,3 +10,4 @@ playwright-report/
 .env.*
 !.env.example
 .next-e2e-real/
+.next-e2e-live/

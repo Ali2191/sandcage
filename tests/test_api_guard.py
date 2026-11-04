@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from sandcage.agent.llm import DEFAULT_RETRIES
 from sandcage.api.guard import (
     MIN_HEADROOM,
     WRONG_CODE_LIMIT,
@@ -85,6 +86,9 @@ def test_local_mode_without_a_code_is_open() -> None:
         ("DEMO_RUN_TOKEN_CAP", "lots"),
         ("DEMO_TRUST_PROXY", "2"),
         ("LLM_PROVIDER", "groq"),
+        ("LLM_RETRIES", "9"),
+        ("LLM_RETRIES", "lots"),
+        ("LLM_RETRIES", "-1"),
         ("LLM_BASE_URL", "http://example.com/v1"),
         ("PANEL_ORIGIN", "https://panel.example/path"),
         ("SANDCAGE_API_PORT", "70000"),
@@ -95,6 +99,13 @@ def test_a_bad_setting_fails_loudly_naming_only_the_setting(name: str, value: st
         ApiSettings.from_env({name: value})
     if len(value) > 2:
         assert value not in str(caught.value)
+
+
+def test_model_call_retries_default_to_the_clients_and_can_be_turned_off() -> None:
+    assert ApiSettings.from_env({}).provider.retries == DEFAULT_RETRIES
+    assert ApiSettings.from_env({"LLM_RETRIES": "0"}).provider.retries == 0
+    top = ApiSettings.from_env({"LLM_RETRIES": str(DEFAULT_RETRIES)})
+    assert top.provider.retries == DEFAULT_RETRIES
 
 
 def test_the_code_is_never_in_a_repr() -> None:
