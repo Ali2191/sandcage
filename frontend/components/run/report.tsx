@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Event, StepEvent } from "@contract";
 import { acceptSuggestion, ApiError, type RunRow } from "@/lib/api";
-import { COPY, outcomePill, reportHeadline, reportSubline, type Segment } from "@/lib/copy";
+import { COPY, inSentence, outcomePill, reportHeadline, reportSubline, type Segment } from "@/lib/copy";
 import {
   blockedLine,
   breakerText,
@@ -215,7 +215,7 @@ function BeforeCard({ events }: { events: Event[] }) {
           <div className="font-semibold text-head">Understood</div>
           <div>
             <div className="text-body">{u.task}</div>
-            {u.done_criteria.length > 0 && <div className="text-muted">Done when {u.done_criteria.join("; ")}.</div>}
+            {u.done_criteria.length > 0 && <div className="text-muted">Done when {u.done_criteria.map(inSentence).join("; ")}.</div>}
           </div>
         </div>
       )}
@@ -369,7 +369,7 @@ export function RunReport({
         <TopBarSlot>
           <span className="font-mono text-[13px] text-muted">Runs / {shortId(runId)}</span>
         </TopBarSlot>
-        <div className="mx-auto max-w-[980px] px-10 pb-12 pt-10 max-[960px]:px-4 max-[960px]:pt-7">
+        <div className="mx-auto max-w-[980px] px-10 pt-10 max-[960px]:px-4 max-[960px]:pt-7">
           <div className="flex flex-wrap items-center gap-2" aria-label="Run summary">
             {repoName && <Pill mono>{repoName}</Pill>}
             <Pill mono>run {shortId(runId)}</Pill>
@@ -386,7 +386,8 @@ export function RunReport({
           </p>
           <ContainmentMap events={events} repo={repoName} />
 
-          <div className="sticky top-0 z-10 -mx-10 mt-8 flex flex-wrap items-center justify-between gap-x-6 border-b border-line-soft bg-bar px-10 py-3 text-sm max-[960px]:static max-[960px]:mx-0 max-[960px]:px-0" data-testid="section-bar">
+        </div>
+        <div className="sticky top-0 z-10 mt-8 border-b border-line-soft bg-bar max-[960px]:static" data-testid="section-bar"><div className="mx-auto flex max-w-[980px] flex-wrap items-center justify-between gap-x-6 px-10 py-3 text-sm max-[960px]:px-4">
             <nav aria-label="Report sections" className="flex gap-5">
               {sectionLinks.map((label, i) => (
                 <button
@@ -406,7 +407,8 @@ export function RunReport({
               {tokens !== null && <span> · {tokens} tokens</span>}
             </div>
           </div>
-
+          </div>
+        <div className="mx-auto max-w-[980px] px-10 pb-12 max-[960px]:px-4">
           <div ref={refs[0]} className="scroll-mt-16 pt-8">
             <Eyebrow>{COPY.report.before}</Eyebrow>
             <div className="mt-3">

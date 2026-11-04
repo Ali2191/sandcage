@@ -11,6 +11,14 @@ export interface Segment {
   ember?: boolean;
 }
 
+/** "The failing test passes" reads "the failing test passes" after "Done when"; "README…" stays. */
+export function inSentence(text: string): string {
+  const second = text.charAt(1);
+  return text.length > 1 && text.charAt(0) === text.charAt(0).toUpperCase() && second === second.toLowerCase() && second !== second.toUpperCase()
+    ? text.charAt(0).toLowerCase() + text.slice(1)
+    : text;
+}
+
 export function times(n: number): string {
   return n === 1 ? "once" : `${n} times`;
 }

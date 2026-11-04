@@ -11,12 +11,12 @@ const STATE_CLASS: Record<Stage["state"], string> = {
 
 export function StageRow({ stages }: { stages: Stage[] }) {
   return (
-    <ol aria-label="Stages" className="m-0 flex list-none flex-wrap items-center gap-2 p-0 text-[13px] max-[960px]:order-3 max-[960px]:w-full">
+    <ol aria-label="Stages" className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0 text-[13px] max-[960px]:order-3 max-[960px]:w-full">
       {stages.map((s) => (
         <li
           key={s.key}
           aria-current={s.state === "current" || s.state === "waiting" ? "step" : undefined}
-          className={cx("rounded-full border px-3 py-0.5 leading-5", STATE_CLASS[s.state])}
+          className={cx("rounded-full border px-2.5 py-0.5 leading-5", STATE_CLASS[s.state])}
         >
           {s.state === "done" && <span aria-hidden="true">✓ </span>}
           {s.label}

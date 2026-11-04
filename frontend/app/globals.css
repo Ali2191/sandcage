@@ -75,7 +75,7 @@ kbd {
 @media (max-width: 960px) {
   .sc-app { height: auto; min-height: 100vh; overflow: visible; }
   .sc-body { display: block; }
-  .sc-main, .sc-aside, .sc-scroll { overflow: visible; max-height: none; }
+  .sc-main, .sc-aside, .sc-feed { overflow: visible; max-height: none; }
   .sc-aside { border-left: 0; border-top: 1px solid var(--color-line-soft); }
   .sc-center { padding: 28px 16px 40px; }
   .sc-top-in { height: auto; min-height: 56px; flex-wrap: wrap; padding: 8px 16px; gap: 8px 14px; }

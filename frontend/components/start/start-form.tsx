@@ -118,7 +118,7 @@ export function StartForm() {
       className="flex min-h-0 flex-col"
     >
       <div className="mx-auto w-full max-w-[920px] px-10 pb-8 pt-10 max-[960px]:px-4 max-[960px]:pt-7">
-        <h1 className="m-0 max-w-[24ch] text-[40px] font-bold leading-[1.12] tracking-tight text-head max-[960px]:text-[28px]">{COPY.start.headline}</h1>
+        <h1 className="m-0 text-[40px] font-bold leading-[1.12] tracking-tight text-head max-[960px]:text-[28px]">{COPY.start.headline}</h1>
         <p className="mb-9 mt-4 max-w-[58ch] text-[17px] text-muted">{COPY.start.sub}</p>
 
         <Eyebrow className="mb-3">{COPY.start.repoEyebrow}</Eyebrow>

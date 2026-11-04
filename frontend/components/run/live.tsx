@@ -111,6 +111,7 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
   };
 
   const stagesNow = stages(events);
+  const actReached = stagesNow.some((s) => s.key === "act" && s.state !== "upcoming");
   const blockedCount = blockedSteps(events).length;
   const rewindable = canRewind(events);
 
@@ -128,8 +129,8 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
         </TopBarSlot>
 
         <div className="flex-none px-8 pt-6 max-[960px]:px-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[13px] text-muted">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[13px] text-muted">
               <span data-testid="runline">
                 {info ? `${info.repo.startsWith("bench:") ? `Bench · ${info.repo.slice(6)}` : info.repo} · ` : ""}
                 {shortId(runId)} · {clock(elapsed)}
@@ -194,7 +195,7 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
         {budget && <BudgetCard budget={budget} />}
         {plan && <PlanHeldCard plan={plan} guard={guard} sandbox={null} />}
         {flagged.length > 0 && <UntrustedCard paths={flagged} />}
-        <CheckpointsCard checkpoints={cps} onRewind={rewindable ? doRewind : undefined} rewinding={rewinding} />
+        {actReached && <CheckpointsCard checkpoints={cps} onRewind={rewindable ? doRewind : undefined} rewinding={rewinding} />}
       </Side>
     </Body>
   );

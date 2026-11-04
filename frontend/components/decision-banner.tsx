@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Approval, Choice } from "@contract";
 import { COPY } from "@/lib/copy";
 import { choiceForKey, isTypingTarget } from "@/lib/keys";
@@ -17,7 +17,7 @@ export function autoLabel(approval: Approval): string {
 
 function Body({ blocks }: { blocks: Approval["body"] }) {
   return (
-    <div className="mt-2 space-y-2">
+    <div className="mt-3 space-y-3">
       {blocks.map((block, index) => {
         switch (block.type) {
           case "code":
@@ -94,7 +94,8 @@ export function DecisionBanner({
   };
 
   // Shortcut keys come from the record. They never fire while typing or after an answer.
-  useEffect(() => {
+  // A layout effect, so the keys work from the moment the banner is on screen.
+  useLayoutEffect(() => {
     if (locked) return;
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
