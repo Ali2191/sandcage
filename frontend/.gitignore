@@ -11,3 +11,4 @@ playwright-report/
 !.env.example
 .next-e2e-real/
 .next-e2e-live/
+.next-deploy/
