@@ -545,6 +545,7 @@ compose() {
 }
 
 start_stack() {
+    say "stack: building the images and starting (the first time takes a few minutes)..."
     (cd "$APP_DIR" && compose up -d --build --remove-orphans) >/dev/null
     say "stack: started (docker compose project $PROJECT)"
 }
@@ -600,8 +601,17 @@ except (ValueError, KeyError):
 " 2>/dev/null || printf 'unknown'
 }
 
+# Caddy asks Let's Encrypt for the certificate on the first request: give it up to a minute.
 https_answers() {
-    curl -fsS --max-time 10 --resolve "$CHOSEN_SITE:443:127.0.0.1" "https://$CHOSEN_SITE/api/healthz" >/dev/null 2>&1
+    local attempt=1
+    while [ "$attempt" -le 12 ]; do
+        if curl -fsS --max-time 10 --resolve "$CHOSEN_SITE:443:127.0.0.1" "https://$CHOSEN_SITE/api/healthz" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 5
+        attempt=$((attempt + 1))
+    done
+    return 1
 }
 
 print_summary() {
