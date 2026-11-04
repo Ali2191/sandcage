@@ -15,8 +15,9 @@ from typing import Final, TypedDict
 
 from pydantic import JsonValue
 
+from sandcage.agent.scenarios import plan_reply
 from sandcage.contract.approval import breaker_approval, plan_approval
-from sandcage.contract.common import Manifest, MatchedRule, Phase, Plan, Risk
+from sandcage.contract.common import MatchedRule, Phase, Plan
 from sandcage.contract.events import (
     ApprovalNeededEvent,
     ApprovalResolvedEvent,
@@ -52,6 +53,8 @@ from sandcage.contract.events import (
 from sandcage.contract.wording import blocked_phrase, blocked_sentence, secret_check
 from sandcage.demo_repos import INVOICE_CALC
 from sandcage.masking import mask
+from sandcage.plan.layer import PlanLayer
+from sandcage.plan.planner import parse_plan
 from sandcage.policy import Decision, PolicyEngine, PolicySession
 
 RUN_ID: Final = "3f2a9c1e7b04"
@@ -98,35 +101,23 @@ class _Clock:
         )
 
 
-def demo_plan() -> Plan:
-    return Plan(
-        steps=[
-            "Read the README and the code to understand the setup",
-            "Run the tests to see the failure",
-            "Fix the discount arithmetic in invoice_calc/invoice.py",
-            "Run the tests again",
-        ],
-        done_criteria=["The failing discount test passes", "No other test breaks"],
-        manifest=Manifest(
-            read_paths=["README.md", "invoice_calc/**", "tests/**", "pytest.ini"],
-            write_paths=["invoice_calc/**"],
-            commands=["pytest", "python", "ls", "cat"],
-            network=[],
-            may_edit_tests=False,
-        ),
-        risk=Risk.HIGH,
-        risk_reasons=[
-            "raised from low to high by the harness: the write paths reach "
-            "invoice_calc/invoice.py, which the scout flagged"
-        ],
-        planner_risk=Risk.LOW,
-    )
+SCOUT_FLAGS: Final = ("README.md", "invoice_calc/invoice.py")
+
+
+def demo_plan(engine: PolicyEngine) -> Plan:
+    """The scripted planner's reply, through the real planner parser and risk floor."""
+    return parse_plan(plan_reply(), engine, suspicious=SCOUT_FLAGS)
 
 
 def demo_events() -> list[Event]:  # noqa: PLR0915 - one linear script, easier read whole
     engine = PolicyEngine.from_file()
     is_secret = secret_check(engine.rulebook.context)
-    session = PolicySession(engine, workspace=_DemoRepoView())
+    plan = demo_plan(engine)
+    session = PolicySession(
+        engine,
+        workspace=_DemoRepoView(),
+        layers=(PlanLayer(plan.manifest, engine.rulebook.context),),
+    )
     clock = _Clock()
     events: list[Event] = []
 
@@ -159,7 +150,6 @@ def demo_events() -> list[Event]:  # noqa: PLR0915 - one linear script, easier r
             test_command_source="pytest.ini",
         )
     )
-    plan = demo_plan()
     add(
         PlanEvent(
             **base(Phase.PLAN, 2.0),
@@ -192,8 +182,8 @@ def demo_events() -> list[Event]:  # noqa: PLR0915 - one linear script, easier r
                 approved_by_human=True,
             )
         )
-    session.mark_suspicious("README.md")
-    session.mark_suspicious("invoice_calc/invoice.py")
+    for flagged in SCOUT_FLAGS:
+        session.mark_suspicious(flagged)
 
     denials: list[str] = []
     injection_denials = 0
