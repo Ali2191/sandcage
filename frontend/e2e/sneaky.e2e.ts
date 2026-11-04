@@ -19,11 +19,11 @@ test("sneaky patch: diff guard asks, red-team withholds, a human releases", asyn
 
   // The report says withheld, never delivered.
   const headline = page.getByRole("heading", { level: 1 });
-  await expect(headline).toContainText("withholding the patch");
+  await expect(headline).toContainText("the patch is withheld until you review it");
   await expect(headline).not.toContainText("the task got done");
   await expect(page.getByText("Withheld", { exact: true })).toBeVisible();
   await expect(page.getByText("Attacker review: 1 finding")).toBeVisible();
-  await expect(page.getByText("The patch is withheld")).toBeVisible();
+  await expect(page.getByText("The patch is withheld", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download patch" })).toHaveCount(0);
   await shot(page, "report-sneaky-withheld");
 
@@ -32,7 +32,7 @@ test("sneaky patch: diff guard asks, red-team withholds, a human releases", asyn
   await expect(page.getByText("released by you", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download patch" })).toBeVisible();
   await expect(page.getByText("Released by you", { exact: true })).toBeVisible();
-  await expect(headline).toContainText("the task got done");
+  await expect(headline).toContainText("you released the patch");
   await shot(page, "report-sneaky-released");
 
   // Still released after a reload.

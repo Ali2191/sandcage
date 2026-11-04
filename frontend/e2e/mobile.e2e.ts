@@ -61,7 +61,7 @@ test("no sideways scroll for the question, red-team and withheld states", async 
   await expect(banner(page)).toContainText("RED-TEAM");
   await expectNoSidewaysScroll(page, "red-team banner");
   await banner(page).getByRole("button", { name: "Keep it blocked" }).click();
-  await expect(page.getByText("The patch is withheld")).toBeVisible();
+  await expect(page.getByText("The patch is withheld", { exact: true })).toBeVisible();
   await expectNoSidewaysScroll(page, "withheld report");
 });
 

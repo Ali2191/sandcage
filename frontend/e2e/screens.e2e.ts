@@ -71,7 +71,7 @@ for (const [prefix, viewport, mobile] of [["", { width: 1440, height: 900 }, fal
       await expect(banner(page)).toContainText("RED-TEAM");
       await shot(page, `${prefix}live-redteam`);
       await banner(page).getByRole("button", { name: "Keep it blocked" }).click();
-      await expect(page.getByText("The patch is withheld")).toBeVisible();
+      await expect(page.getByText("The patch is withheld", { exact: true })).toBeVisible();
       await shot(page, `${prefix}report-withheld`);
       await page.getByRole("button", { name: "Release patch" }).click();
       await expect(page.getByRole("button", { name: "Download patch" })).toBeVisible();

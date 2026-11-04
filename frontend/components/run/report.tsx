@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Event, StepEvent } from "@contract";
 import { acceptSuggestion, ApiError, type RunRow } from "@/lib/api";
-import { COPY, inSentence, outcomePill, reportHeadline, reportSubline, type Segment } from "@/lib/copy";
+import { COPY, inSentence, reportLine, reportSubline } from "@/lib/copy";
 import {
   blockedLine,
   breakerText,
@@ -40,12 +40,8 @@ import { BlockedIcon, Button, Card, CheckIcon, Eyebrow, Pill, cx } from "../ui";
 import { CheckpointsCard, LearnCard, ReachedCard, TrifectaCard, type LearnStatus } from "./cards";
 import { DeliverPanel } from "./deliver-panel";
 
-function Headline({ segments }: { segments: Segment[] }) {
-  return (
-    <h1 className="m-0 mt-5 text-[44px] font-bold leading-[1.1] tracking-tight text-head max-[960px]:text-[30px]">
-      {segments.map((s, i) => (s.ember ? <span key={i} className="text-ember">{s.text}</span> : <span key={i}>{s.text}</span>))}
-    </h1>
-  );
+function Headline({ text }: { text: string }) {
+  return <h1 className="m-0 mt-5 text-[44px] font-bold leading-[1.1] tracking-tight text-head max-[960px]:text-[30px]">{text}</h1>;
 }
 
 function Tag({ children }: { children: ReactNode }) {
@@ -311,6 +307,7 @@ export function RunReport({
   const done = doneEvent(events);
   const counts = gateCounts(events);
   const result = outcome(events, releasedByHuman);
+  const line = reportLine(reportEvent(events), done, releasedByHuman);
   const budget = latestBudget(events) ?? done?.budget ?? null;
   const tokens = measuredTokens(budget);
   const u = understanding(events);
@@ -376,11 +373,16 @@ export function RunReport({
             {modelLabel && <Pill mono>{modelLabel}</Pill>}
             {guardKnown !== undefined && <Pill mono>guard {guardKnown ? "on" : "off"}</Pill>}
             {tokens !== null && <Pill mono>{tokens} tokens</Pill>}
-            <Pill tone={result.kind === "withheld" ? "ember" : "solid"} mono>
-              {outcomePill(result)}
+            <Pill tone={line.withheld ? "ember" : "solid"} mono>
+              {line.pill}
             </Pill>
           </div>
-          <Headline segments={reportHeadline(result, counts.blocked)} />
+          <Headline text={line.headline} />
+          {line.declinedLine && (
+            <p className="mb-0 mt-3 max-w-[70ch] text-[17px] text-body" data-testid="declined-line">
+              {line.declinedLine}
+            </p>
+          )}
           <p className="mb-0 mt-4 max-w-[70ch] text-[17px] text-muted" data-testid="subline">
             {reportSubline(result, u?.task ?? info?.task ?? null, counts.checked, done?.summary ?? null)}
           </p>

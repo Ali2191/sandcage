@@ -3,13 +3,8 @@
  * in Design/PAGES.md. A snapshot test pins it, so UI copy cannot drift from the design.
  * Words that come from the backend (approval banners, blocked sentences) are not here.
  */
+import type { DoneEvent, ReportEvent } from "../../contract/events";
 import type { Outcome } from "./derive";
-
-export interface Segment {
-  text: string;
-  /** Rendered in ember: the blocked part of a headline. */
-  ember?: boolean;
-}
 
 /** "The failing test passes" reads "the failing test passes" after "Done when"; "README…" stays. */
 export function inSentence(text: string): string {
@@ -23,35 +18,37 @@ export function times(n: number): string {
   return n === 1 ? "once" : `${n} times`;
 }
 
-/** The report headline for each way a run can end (PAGES.md section 5, plus Withheld). */
-export function reportHeadline(outcome: Outcome, blocked: number): Segment[] {
-  const seg = (text: string, ember = false): Segment => (ember ? { text, ember } : { text });
-  switch (outcome.kind) {
-    case "delivered":
-    case "released":
-      return blocked > 0
-        ? [seg("The agent tried to cross the line. Sandcage "), seg(`blocked it ${times(blocked)}`, true), seg(", and the task still got done.")]
-        : [seg("The run finished inside the cage, and the task got done.")];
-    case "withheld":
-      return blocked > 0
-        ? [
-            seg("The agent tried to cross the line. Sandcage "),
-            seg(`blocked it ${times(blocked)}`, true),
-            seg(" and is "),
-            seg("withholding the patch", true),
-            seg(" until you review it."),
-          ]
-        : [seg("The agent finished, but Sandcage is "), seg("withholding the patch", true), seg(" until you review it.")];
-    case "stopped":
-      return blocked > 0
-        ? [seg("You stopped this run. Before that, Sandcage "), seg(`blocked it ${times(blocked)}`, true), seg(".")]
-        : [seg("You stopped this run. Nothing left the cage.")];
-    case "running":
-    case "ended":
-      return blocked > 0
-        ? [seg("Sandcage "), seg(`blocked the agent ${times(blocked)}`, true), seg(". The run ended before the task was done.")]
-        : [seg("The run ended before the task was done.")];
+export interface ReportLine {
+  /** The outcome pill, as the backend wrote it (except after a release, see below). */
+  pill: string;
+  headline: string;
+  /** The honest line for asks the human did not approve, or null. */
+  declinedLine: string | null;
+  /** The patch is withheld and nobody has released it. */
+  withheld: boolean;
+}
+
+/** What a human who released a withheld patch after the report was written is told. */
+const RELEASED_PILL = "Released by you";
+const RELEASED_HEADLINE = "The agent finished, and you released the patch after reviewing it.";
+const WITHHELD_PILL = "Withheld";
+
+/**
+ * The pill and headline come from the contract: the `report` event's `outcome`, `headline`
+ * and `declined_line`. A run with no report (stopped early, or it ended before one) uses
+ * the `done` event's `outcome` and `summary`. The report is written before a release, so
+ * it still says "Withheld" afterwards; only then does the panel word the release itself.
+ */
+export function reportLine(report: ReportEvent | undefined, done: DoneEvent | undefined, released: boolean): ReportLine {
+  const pill = report?.outcome ?? done?.outcome ?? "Running";
+  const headline = report?.headline ?? done?.summary ?? "";
+  const declinedLine = report?.declined_line ?? null;
+  if (pill === WITHHELD_PILL) {
+    return released
+      ? { pill: RELEASED_PILL, headline: RELEASED_HEADLINE, declinedLine, withheld: false }
+      : { pill, headline, declinedLine, withheld: true };
   }
+  return { pill, headline, declinedLine, withheld: false };
 }
 
 /** The report sub-line after the task: what happened to the code. */
@@ -68,24 +65,6 @@ export function reportSubline(outcome: Outcome, task: string | null, actions: nu
     case "running":
     case "ended":
       return `${head}${summary ?? ""}`.trimEnd();
-  }
-}
-
-/** The outcome pill in the report chip row. */
-export function outcomePill(outcome: Outcome): string {
-  switch (outcome.kind) {
-    case "delivered":
-      return "Delivered";
-    case "released":
-      return "Released by you";
-    case "withheld":
-      return "Withheld";
-    case "stopped":
-      return "Stopped by you";
-    case "running":
-      return "Running";
-    case "ended":
-      return outcome.status;
   }
 }
 
