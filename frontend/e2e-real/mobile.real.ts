@@ -1,0 +1,90 @@
+import type { Page } from "@playwright/test";
+import { banner, expect, test } from "./helpers";
+
+test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+/** No page may scroll sideways. Names the widest offenders so a failure is easy to fix. */
+async function expectNoSidewaysScroll(page: Page, label: string): Promise<void> {
+  const report = await page.evaluate(() => {
+    const doc = document.documentElement;
+    const width = doc.clientWidth;
+    const offenders: string[] = [];
+    document.querySelectorAll<HTMLElement>("body *").forEach((el) => {
+      // Things that scroll inside their own box are allowed to be wider than it.
+      for (let p: HTMLElement | null = el.parentElement; p; p = p.parentElement) {
+        const o = getComputedStyle(p).overflowX;
+        if (o === "auto" || o === "scroll" || o === "hidden") return;
+      }
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.right > width + 1) offenders.push(`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)} right=${Math.round(r.right)}`);
+    });
+    return { scrollWidth: doc.scrollWidth, width, offenders: offenders.slice(0, 5) };
+  });
+  expect(report.scrollWidth, `${label}: page is ${report.scrollWidth}px wide in a ${report.width}px window; widest: ${report.offenders.join("; ")}`).toBeLessThanOrEqual(report.width);
+}
+
+test("no sideways scroll on any static page", async ({ page, api }) => {
+  // Earlier specs left real runs behind, so the Runs page has rows; the gallery and Bench are
+  // empty until the Bench exists, which is a state worth checking at phone width too.
+  for (const path of ["/", "/runs", "/gallery", "/bench", "/policy", "/no-such-page", "/runs/not-a-run"]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("status", { name: /^Loading/ })).toHaveCount(0); // lists have filled in
+    await expectNoSidewaysScroll(page, path);
+  }
+});
+
+test("no sideways scroll in a live run, at every banner, and in the report", async ({ page, api }) => {
+  const id = await api.start("demo");
+  await page.goto(`/runs/${id}`);
+  await expect(banner(page)).toContainText("APPROVE THE PLAN");
+  await expectNoSidewaysScroll(page, "plan banner");
+  await banner(page).getByRole("button", { name: /Approve plan/ }).click();
+  await expect(banner(page)).toContainText("CIRCUIT BREAKER");
+  await expectNoSidewaysScroll(page, "breaker banner");
+  await banner(page).getByRole("button", { name: /Resume/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.getByRole("button", { name: "Show all details" }).click();
+  await expectNoSidewaysScroll(page, "report with the details table open");
+});
+
+test("no sideways scroll for the question, red-team and withheld states", async ({ page, api }) => {
+  const q = await api.start("clarify");
+  await page.goto(`/runs/${q}`);
+  await expect(banner(page)).toContainText("A QUESTION");
+  await expectNoSidewaysScroll(page, "question banner");
+  const s = await api.start("sneaky_urllib");
+  await page.goto(`/runs/${s}`);
+  await expect(banner(page)).toContainText("APPROVE THE PLAN");
+  await banner(page).getByRole("button", { name: /Approve plan/ }).click();
+  await expect(banner(page)).toContainText("NEEDS YOUR CALL");
+  await expectNoSidewaysScroll(page, "action banner");
+  await banner(page).getByRole("button", { name: /Allow once/ }).click();
+  await expect(banner(page)).toContainText("RED-TEAM");
+  await expectNoSidewaysScroll(page, "red-team banner");
+  await banner(page).getByRole("button", { name: "Keep it blocked" }).click();
+  await expect(page.getByText("The patch is withheld", { exact: true })).toBeVisible();
+  await expectNoSidewaysScroll(page, "withheld report");
+});
+
+test("no sideways scroll in a report with a declined line", async ({ page, api }) => {
+  const id = await api.start("sneaky_urllib");
+  await page.goto(`/runs/${id}`);
+  await expect(banner(page)).toContainText("APPROVE THE PLAN");
+  await banner(page).getByRole("button", { name: /Approve plan/ }).click();
+  await expect(banner(page)).toContainText("NEEDS YOUR CALL");
+  await banner(page).getByRole("button", { name: "Deny" }).click();
+  await expect(page.getByTestId("declined-line")).toHaveText("You did not approve 1 request, so it did not run.");
+  await expectNoSidewaysScroll(page, "report with the declined line");
+});
+
+test("the Start action bar sits in the flow after the form, never over a field", async ({ page }) => {
+  await page.goto("/");
+  const start = page.getByRole("button", { name: /Start run/ });
+  await expect(start).toBeVisible();
+  const position = await start.evaluate((el) => {
+    for (let p: Element | null = el; p; p = p.parentElement) if (getComputedStyle(p).position === "sticky" || getComputedStyle(p).position === "fixed") return getComputedStyle(p).position;
+    return "static";
+  });
+  expect(position).toBe("static");
+});
