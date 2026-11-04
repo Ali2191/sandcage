@@ -1,4 +1,4 @@
-.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker
+.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker panel-check
 
 check: lint types test env-check contract-check
 
@@ -33,3 +33,8 @@ sandbox-image:
 # Tests that need a real Docker daemon (and the sandbox image).
 test-docker:
 	uv run --locked pytest -m docker
+
+# The web panel (frontend/): lint, typecheck, unit tests and the production build.
+# Needs `npm ci` in frontend/ once. The backend's `make check` does not run it.
+panel-check:
+	cd frontend && npm run check

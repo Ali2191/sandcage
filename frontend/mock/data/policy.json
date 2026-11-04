@@ -1,0 +1,267 @@
+{
+  "rules": [
+    {
+      "id": "path.deny_outside_workspace",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "The agent may only touch files inside the workspace.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "list_dir"
+      ]
+    },
+    {
+      "id": "path.deny_secrets",
+      "decision": "deny",
+      "risk": "critical",
+      "reason": "Secret files (keys, credentials, .env) are never readable or writable.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "list_dir"
+      ]
+    },
+    {
+      "id": "ask.edit_tests",
+      "decision": "ask",
+      "risk": "medium",
+      "reason": "Changing a test needs a human's approval.",
+      "tools": [
+        "write_file"
+      ]
+    },
+    {
+      "id": "path.allow_workspace",
+      "decision": "allow",
+      "risk": "low",
+      "reason": "Files inside the workspace are allowed.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "list_dir"
+      ]
+    },
+    {
+      "id": "ask.unparseable_command",
+      "decision": "ask",
+      "risk": "medium",
+      "reason": "Sandcage cannot read this command with certainty, so a human must check it.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "net.deny_tools",
+      "decision": "deny",
+      "risk": "critical",
+      "reason": "Network tools are blocked; nothing may be sent off the machine.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_pipe_to_shell",
+      "decision": "deny",
+      "risk": "critical",
+      "reason": "Piping output into a shell runs unseen code, so it is blocked.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_base64_redirect",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Using base64 with a redirect can hide or smuggle data, so it is blocked.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_chmod_777",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Making files writable by everyone is blocked.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_rm_outside_workspace",
+      "decision": "deny",
+      "risk": "critical",
+      "reason": "Deleting outside the workspace, or the workspace itself, is blocked.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_secret_paths",
+      "decision": "deny",
+      "risk": "critical",
+      "reason": "Commands may not name secret files (keys, credentials, .env).",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_paths_outside_workspace",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Commands may only use paths inside the workspace.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "ask.bulk_delete",
+      "decision": "ask",
+      "risk": "medium",
+      "reason": "Deleting many files, whole folders or wildcard matches needs a human's approval.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.allow_pip_requirements",
+      "decision": "allow",
+      "risk": "medium",
+      "reason": "Installing the project's pinned requirements is allowed.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.deny_package_install",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Installing packages other than the pinned requirements is blocked.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "cmd.allow_safe",
+      "decision": "allow",
+      "risk": "low",
+      "reason": "Running python, pytest, ls and cat in the sandbox is allowed.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "ask.unclassified_command",
+      "decision": "ask",
+      "risk": "medium",
+      "reason": "This command is not on the allowed list, so a human must approve it.",
+      "tools": [
+        "run_command"
+      ]
+    },
+    {
+      "id": "net.deny_scheme",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Only http and https addresses can be fetched.",
+      "tools": [
+        "http_get"
+      ]
+    },
+    {
+      "id": "net.allow_hosts",
+      "decision": "allow",
+      "risk": "low",
+      "reason": "Reading documentation from an allowed site is allowed.",
+      "tools": [
+        "http_get"
+      ]
+    },
+    {
+      "id": "net.default_deny",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Fetching from this site is not allowed.",
+      "tools": [
+        "http_get"
+      ]
+    },
+    {
+      "id": "tool.allow_rollback",
+      "decision": "allow",
+      "risk": "low",
+      "reason": "Restoring an earlier checkpoint of this run is allowed.",
+      "tools": [
+        "rollback"
+      ]
+    },
+    {
+      "id": "tool.allow_finish",
+      "decision": "allow",
+      "risk": "low",
+      "reason": "Finishing the run is allowed.",
+      "tools": [
+        "finish"
+      ]
+    },
+    {
+      "id": "diff.deny_secrets",
+      "decision": "deny",
+      "risk": "critical",
+      "reason": "Writing secrets into files is blocked.",
+      "tools": [
+        "write_file"
+      ]
+    },
+    {
+      "id": "diff.ask_network_exec",
+      "decision": "ask",
+      "risk": "high",
+      "reason": "This edit adds code that can reach the network or run programs, so a human must review it.",
+      "tools": [
+        "write_file"
+      ]
+    },
+    {
+      "id": "diff.deny_weakened_tests",
+      "decision": "deny",
+      "risk": "high",
+      "reason": "Weakening the tests is blocked; fix the code instead.",
+      "tools": [
+        "write_file"
+      ]
+    }
+  ],
+  "secret_patterns": [
+    ".env",
+    ".env.*",
+    "*.env",
+    ".envrc",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "id_rsa*",
+    "id_dsa*",
+    "id_ecdsa*",
+    "id_ed25519*",
+    ".git-credentials",
+    ".gitconfig",
+    "**/.git/config",
+    ".netrc",
+    "_netrc",
+    ".npmrc",
+    ".pypirc",
+    ".pgpass",
+    ".htpasswd",
+    ".ssh",
+    ".aws",
+    "**/.docker/config.json",
+    ".kube"
+  ],
+  "counts": {
+    "deny": 14,
+    "ask": 5,
+    "allow": 6
+  }
+}
