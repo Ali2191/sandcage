@@ -5,7 +5,6 @@ import type { Event } from "@contract";
 import { stopRun, ApiError, type RunRow } from "@/lib/api";
 import { COPY } from "@/lib/copy";
 import {
-  blockedSteps,
   latestBudget,
   canRewind,
   checkpoints as deriveCheckpoints,
@@ -114,7 +113,7 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
 
   const stagesNow = stages(events);
   const actReached = stagesNow.some((s) => s.key === "act" && s.state !== "upcoming");
-  const blockedCount = blockedSteps(events).length;
+  const blockedCount = counts.blocked;
   const rewindable = canRewind(events);
 
   return (

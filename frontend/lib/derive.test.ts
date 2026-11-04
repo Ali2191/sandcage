@@ -178,13 +178,24 @@ describe("blocked steps and the containment moment", () => {
   });
 
   it("counts the gate's decisions", () => {
-    expect(gateCounts(SAMPLE)).toEqual({ checked: 9, blocked: 2, allowed: 7, denied: 2 - 0, asked: 0 });
+    expect(gateCounts(SAMPLE)).toEqual({ checked: 9, blocked: 2, declined: 0, allowed: 7, denied: 2 - 0, asked: 0 });
   });
 
-  it("counts a refused ask as blocked", () => {
+  it("counts a refused ask as declined, never as blocked (only gate denials are blocks)", () => {
     const ask: StepEvent = { ...sampleEvent(9, "step"), decision: "ask", approved: false, executed: false, blocked: true };
-    expect(gateCounts([ask]).blocked).toBe(1);
+    expect(gateCounts([ask]).blocked).toBe(0);
+    expect(gateCounts([ask]).declined).toBe(1);
     expect(gateCounts([ask]).asked).toBe(1);
+  });
+
+  it("does not make a refused ask the containment moment", () => {
+    const ask: StepEvent = { ...sampleEvent(9, "step"), decision: "ask", approved: false, executed: false, blocked: true };
+    expect(containmentMoment([ask])).toBeNull();
+  });
+
+  it("does not count a step that only ran in observe mode", () => {
+    const seen: StepEvent = { ...sampleEvent(9, "step"), decision: "deny", blocked: true, observed: true, executed: true };
+    expect(gateCounts([seen]).blocked).toBe(0);
   });
 });
 

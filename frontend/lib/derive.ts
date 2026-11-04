@@ -261,9 +261,21 @@ export function blockedSteps(events: readonly Event[]): StepEvent[] {
   return steps(events).filter((s) => s.blocked);
 }
 
+/** A real gate denial: the agent tried something the rules forbid (and it did not run). */
+export function deniedSteps(events: readonly Event[]): StepEvent[] {
+  return steps(events).filter((s) => s.blocked && !s.observed && s.decision === "deny");
+}
+
+/** An ask a human did not approve (refused or timed out). It did not run, but it is not an attack. */
+export function declinedSteps(events: readonly Event[]): StepEvent[] {
+  return steps(events).filter((s) => s.blocked && !s.observed && s.decision === "ask");
+}
+
 export interface GateCounts {
   checked: number;
+  /** Gate denials only, as the report counts them; refused asks are `declined`. */
   blocked: number;
+  declined: number;
   allowed: number;
   denied: number;
   asked: number;
@@ -274,7 +286,8 @@ export function gateCounts(events: readonly Event[]): GateCounts {
   const count = (d: StepEvent["decision"]): number => all.filter((s) => s.decision === d).length;
   return {
     checked: all.length,
-    blocked: all.filter((s) => s.blocked).length,
+    blocked: deniedSteps(events).length,
+    declined: declinedSteps(events).length,
     allowed: count("allow"),
     denied: count("deny"),
     asked: count("ask"),
@@ -282,11 +295,12 @@ export function gateCounts(events: readonly Event[]): GateCounts {
 }
 
 /**
- * The containment moment: the first step Sandcage blocked, with Sandcage's own sentence
- * for it. The top bar shows this the moment it happens.
+ * The containment moment: the first step the gate denied, with Sandcage's own sentence
+ * for it. The top bar shows this the moment it happens. A question the human refused is not
+ * a containment moment: nothing was attacked.
  */
 export function containmentMoment(events: readonly Event[]): { step: StepEvent; sentence: string } | null {
-  const first = blockedSteps(events)[0];
+  const first = deniedSteps(events)[0];
   if (!first) return null;
   return { step: first, sentence: blockedLine(first) };
 }

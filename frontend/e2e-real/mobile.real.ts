@@ -23,7 +23,7 @@ async function expectNoSidewaysScroll(page: Page, label: string): Promise<void> 
   expect(report.scrollWidth, `${label}: page is ${report.scrollWidth}px wide in a ${report.width}px window; widest: ${report.offenders.join("; ")}`).toBeLessThanOrEqual(report.width);
 }
 
-test("no sideways scroll on any static page", async ({ page, api }) => {
+test("no sideways scroll on any static page", async ({ page }) => {
   // Earlier specs left real runs behind, so the Runs page has rows; the gallery and Bench are
   // empty until the Bench exists, which is a state worth checking at phone width too.
   for (const path of ["/", "/runs", "/gallery", "/bench", "/policy", "/no-such-page", "/runs/not-a-run"]) {
