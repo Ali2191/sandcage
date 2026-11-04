@@ -27,15 +27,25 @@ export const test = base.extend<{ api: Api }>({
     );
     await provide(page);
   },
+  // Runs a test leaves open are stopped afterwards, so they never hold a slot for the next one.
   api: async ({ request }, provide) => {
-    await provide(new Api(request));
+    const api = new Api(request);
+    await provide(api);
+    await api.stopAll();
   },
 });
 
 export { expect };
 
 export class Api {
+  private readonly started: string[] = [];
   constructor(private readonly request: APIRequestContext) {}
+
+  async stopAll(): Promise<void> {
+    for (const id of this.started) {
+      await this.request.post(`${API}/runs/${id}/stop`, { headers: { "X-Access-Code": code() } });
+    }
+  }
 
   /** Start a scripted run over HTTP, like the Start form does. */
   async start(scenario: Scenario, opts: { approvePlan?: boolean; task?: string } = {}): Promise<string> {
@@ -44,7 +54,9 @@ export class Api {
       headers: { "X-Access-Code": code() },
     });
     expect(response.status(), "POST /runs").toBe(202);
-    return ((await response.json()) as { id: string }).id;
+    const id = ((await response.json()) as { id: string }).id;
+    this.started.push(id);
+    return id;
   }
 
   async row(id: string): Promise<Record<string, unknown>> {
