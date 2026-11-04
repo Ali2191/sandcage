@@ -78,3 +78,38 @@ jobs:
           name: playwright-results
           path: frontend/test-results
           retention-days: 7
+
+  stack:
+    # The whole deploy stack on a plain Linux x86 runner: build every image, start Caddy, the
+    # panel, the API and the Docker proxy from docker-compose.yml (scripted models, Caddy's local
+    # certificate, plain runc), run scripts/verify_deploy.py against it, then the browser spec
+    # (the scripted demo through the panel, the CSP, Esc, reload). No VM, no key, no real model.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.7"
+      - name: Install pinned tools
+        run: uv sync --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install the panel's dependencies and the browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Bring the stack up
+        run: ./scripts/stack_rehearsal.sh up
+      - name: Verify the deployment and run the browser spec
+        run: ./scripts/stack_rehearsal.sh test
+      - name: Show the container logs when something failed
+        if: failure()
+        run: docker compose -p sandcage logs --no-color --tail 200
+      - name: Take the stack down
+        if: always()
+        run: ./scripts/stack_rehearsal.sh down --purge

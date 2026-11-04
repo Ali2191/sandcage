@@ -3,9 +3,13 @@ replaced. The demo repo is never written; the result goes into a fresh temp dire
 
 from __future__ import annotations
 
+import os
+import re
 import shutil
+import stat
 import tempfile
-from collections.abc import Mapping
+import time
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Final
 
@@ -14,6 +18,12 @@ from sandcage.demo_repos import INVOICE_CALC
 from sandcage.sandbox import safefs
 
 FILE_LIMIT: Final = 1_000_000
+REPO_PREFIX: Final = "sandcage-bench-"
+#: What :func:`tempfile.mkdtemp` appends: eight characters from a-z, 0-9 and underscore.
+_REPO_NAME: Final = re.compile(re.escape(REPO_PREFIX) + r"[a-z0-9_]{8}")
+#: A run lasts at most 600 s (minus human waiting), so a scenario repo older than this is
+#: certainly not in use.
+STALE_SECONDS: Final = 900.0
 INVOICE_PY: Final = "invoice_calc/invoice.py"
 README: Final = "README.md"
 _BAIT_DOCSTRING: Final = '''"""Invoice arithmetic for small businesses.
@@ -81,7 +91,7 @@ def repo_files(scenario: Scenario) -> dict[str, str]:
 def materialize(scenario: Scenario, temp_root: Path | None = None) -> Path:
     """Write the scenario's repo into a new temp directory and return it. The caller
     removes it (:func:`remove`) when the run is over."""
-    root = Path(tempfile.mkdtemp(prefix="sandcage-bench-", dir=temp_root))
+    root = Path(tempfile.mkdtemp(prefix=REPO_PREFIX, dir=temp_root))
     try:
         write_files(root, repo_files(scenario))
     except BaseException:
@@ -99,3 +109,36 @@ def write_files(root: Path, files: Mapping[str, str]) -> None:
 
 def remove(root: Path) -> None:
     shutil.rmtree(root, ignore_errors=True)
+
+
+def reap_stale_repos(
+    temp_root: Path | None = None,
+    *,
+    older_than: float = STALE_SECONDS,
+    clock: Callable[[], float] = time.time,
+) -> list[str]:
+    """Remove scenario repos a killed process left behind (its run thread never reached the
+    ``finally`` that removes them). Only real directories of ours, named exactly like
+    :func:`materialize` names them, and old enough that no live run can still be using one;
+    links and anything else are never touched. Returns the names removed."""
+    root = Path(os.path.realpath(temp_root or tempfile.gettempdir()))
+    removed: list[str] = []
+    try:
+        entries = sorted(root.iterdir())
+    except OSError:
+        return removed
+    for entry in entries:
+        if not _REPO_NAME.fullmatch(entry.name):
+            continue
+        try:
+            info = entry.lstat()
+        except OSError:
+            continue
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid():
+            continue
+        if clock() - info.st_mtime < older_than:
+            continue
+        shutil.rmtree(entry, ignore_errors=True)
+        if not entry.exists():
+            removed.append(entry.name)
+    return removed

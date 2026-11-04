@@ -33,6 +33,7 @@ from sandcage.api.guard import DemoGuard
 from sandcage.api.runs import RunManager
 from sandcage.api.server import Server, make_server
 from sandcage.api.settings import ApiSettings, SettingsError
+from sandcage.bench.repo import reap_stale_repos
 from sandcage.demo_repos import DEMO_REPOS_DIR
 from sandcage.events.store import EventStore, StoreError
 from sandcage.masking import mask
@@ -123,6 +124,10 @@ def build(
             log.info("removed %d orphaned sandbox(es)", len(reaped.containers))
     except DockerError as problem:
         log.warning("could not reap orphaned sandboxes: %s", mask(str(problem))[:200])
+
+    leftover = reap_stale_repos(temp_root)
+    if leftover:
+        log.info("removed %d scenario repo(s) a previous process left behind", len(leftover))
 
     def runtime() -> dict[str, JsonValue]:
         found = selector.status().to_dict()

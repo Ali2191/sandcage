@@ -20,7 +20,8 @@
     "screens": "SANDCAGE_SCREENSHOTS=1 playwright test e2e/screens.e2e.ts",
     "wording:verify": "node scripts/wording-verify.ts",
     "e2e:real": "playwright test -c playwright.real.config.ts",
-    "e2e:live": "playwright test -c playwright.live.config.ts"
+    "e2e:live": "playwright test -c playwright.live.config.ts",
+    "e2e:stack": "playwright test -c playwright.stack.config.ts"
   },
   "dependencies": {
     "next": "16.4.5",

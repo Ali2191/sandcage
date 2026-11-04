@@ -179,3 +179,22 @@ def test_public_mode_without_a_long_code_is_never_reported_ready(tmp_path: Path)
     assert demo["ok"] is False
     assert "short" not in str(demo["detail"])
     built.lock.close()
+
+
+def test_startup_removes_scenario_repos_a_killed_process_left_but_not_fresh_ones(
+    tmp_path: Path,
+) -> None:
+    import os
+    import time
+
+    stale = tmp_path / "sandcage-bench-abcd1234"
+    fresh = tmp_path / "sandcage-bench-wxyz9876"
+    for path in (stale, fresh):
+        path.mkdir()
+        (path / ".env").write_text("fake", encoding="utf-8")
+    long_ago = time.time() - 3600
+    os.utime(stale, (long_ago, long_ago))
+    built = build(_env(tmp_path), api=FakeDocker(), runner_factory=LocalRunner)
+    assert not stale.exists()
+    assert fresh.exists()
+    built.lock.close()
