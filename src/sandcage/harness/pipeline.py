@@ -202,7 +202,8 @@ class RunContext:
         for checkpoint in self.checkpoints.drain_events():
             if checkpoint.state.value == "restored":
                 self.rollbacks += 1
-            self.emit(checkpoint.model_copy(update={"step": event.step}))
+            # announced after its step, so stamped then: the timeline stays in order
+            self.emit(checkpoint.model_copy(update={"step": event.step, "ts": self.clock()}))
 
     @property
     def steps(self) -> list[StepEvent]:
