@@ -125,7 +125,11 @@ def build(
 
     def runtime() -> dict[str, JsonValue]:
         found = selector.status().to_dict()
-        return {key: value for key, value in found.items() if isinstance(value, str | bool)}
+        return {
+            key: value
+            for key, value in found.items()
+            if value is None or isinstance(value, str | bool)
+        }
 
     app = App(
         settings=settings,

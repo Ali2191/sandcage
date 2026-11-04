@@ -1,4 +1,4 @@
-.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker
+.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker api
 
 check: lint types test env-check contract-check
 
@@ -33,3 +33,7 @@ sandbox-image:
 # Tests that need a real Docker daemon (and the sandbox image).
 test-docker:
 	uv run --locked pytest -m docker
+
+# The API on 127.0.0.1:8000 (scripted models unless LLM_PROVIDER says otherwise).
+api:
+	uv run --locked python -m sandcage.api
