@@ -380,7 +380,8 @@ export class MockServer {
       case "GET ": {
         const gate = await this.inject("run", res, req);
         if (gate === "handled") return;
-        return send(200, runRow(run));
+        // The single-run view also names the approval that waits (Specs/API.md).
+        return send(200, { ...runRow(run), pending_approval: run.pendingApprovalId });
       }
       case "GET events":
         return this.stream(req, res, run);

@@ -75,7 +75,8 @@ export async function shot(page: Page, name: string): Promise<void> {
     window.scrollTo(0, 0);
     document.querySelectorAll(".sc-main, .sc-aside, .sc-feed").forEach((el) => (el.scrollTop = 0));
   });
-  await page.screenshot({ path: `screens/${name}.png`, fullPage: false });
+  const phone = (page.viewportSize()?.width ?? 1440) < 500;
+  await page.screenshot({ path: `screens/${name}.png`, fullPage: phone });
 }
 
 /** Errors shown by the page itself (not Next's route announcer, which is also an alert). */

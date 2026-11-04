@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { COPY } from "@/lib/copy";
 import { isTypingTarget } from "@/lib/keys";
 import { Button } from "./ui";
+
+const noSubscribe = (): (() => void) => () => undefined;
 
 /** A visible legend of every shortcut, opened with "?" or its button in the corner. */
 export function ShortcutLegend() {
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
+  // False on the server and during hydration, true once the page can react to keys.
+  const interactive = useSyncExternalStore(noSubscribe, () => true, () => false);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -30,8 +34,9 @@ export function ShortcutLegend() {
         type="button"
         aria-label={COPY.shortcuts.title}
         aria-expanded={open}
+        data-interactive={interactive}
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-3 right-3 z-40 flex size-8 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-bar font-mono text-[13px] text-muted hover:border-fg hover:text-fg max-[960px]:bottom-3"
+        className="fixed bottom-3 right-3 z-40 flex size-8 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-bar font-mono text-[13px] text-muted hover:border-fg hover:text-fg pointer-coarse:hidden"
       >
         ?
       </button>
