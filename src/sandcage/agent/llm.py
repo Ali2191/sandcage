@@ -156,8 +156,8 @@ class OpenAIChatClient:
     timeout: float = DEFAULT_TIMEOUT
     retries: int = DEFAULT_RETRIES
     max_tokens: int = MAX_COMPLETION_TOKENS
-    transport: Transport = urllib_transport
-    sleep: Sleeper = time.sleep
+    transport: Transport = field(default=urllib_transport, repr=False)
+    sleep: Sleeper = field(default=time.sleep, repr=False)
 
     def complete(self, messages: Sequence[Message]) -> Completion:
         if not self.base_url.startswith(("https://", "http://127.0.0.1", "http://localhost")):
