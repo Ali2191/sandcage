@@ -351,6 +351,8 @@ class App:
             budget = budgets[-1] if budgets else None
         outputs = self.store.outputs(record.id)
         blocked = outputs.blocked if outputs else bool(done and done.delivery_blocked)
+        # released during the run (the red-team question) or afterwards (POST release)
+        released = record.released_by_human or bool(done and done.released_by_human)
         return {
             "id": record.id,
             "repo": record.repo,
@@ -369,7 +371,7 @@ class App:
             "outcome": done.outcome if done else None,
             "delivered": bool(done and done.delivered) or record.released_by_human,
             "delivery_blocked": blocked,
-            "released_by_human": record.released_by_human,
+            "released_by_human": released,
         }
 
     def stop(self, request: Request, match: Mapping[str, str]) -> Response:
