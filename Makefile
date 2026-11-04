@@ -1,6 +1,6 @@
-.PHONY: check lint types test env-check fmt sandbox-image test-docker
+.PHONY: check lint types test env-check contract-check contract fmt sandbox-image test-docker
 
-check: lint types test env-check
+check: lint types test env-check contract-check
 
 lint:
 	uv run --locked ruff check .
@@ -14,6 +14,13 @@ test:
 
 env-check:
 	./scripts/check-tracked-secrets.sh
+
+# The typed event contract (contract/) is generated from src/sandcage/contract.
+contract:
+	uv run --locked python -m sandcage.contract
+
+contract-check:
+	uv run --locked python -m sandcage.contract --check
 
 fmt:
 	uv run --locked ruff check --fix .

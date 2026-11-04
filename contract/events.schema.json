@@ -1,0 +1,2772 @@
+{
+  "$defs": {
+    "ActionContext": {
+      "description": "The gated action behind an ``action`` or ``amendment`` approval.",
+      "properties": {
+        "args": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Args",
+          "type": "object"
+        },
+        "in_plan": {
+          "default": true,
+          "title": "In Plan",
+          "type": "boolean"
+        },
+        "matched_rules": {
+          "items": {
+            "$ref": "#/$defs/MatchedRule"
+          },
+          "title": "Matched Rules",
+          "type": "array"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "taint_sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Taint Sources",
+          "type": "array"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "args",
+        "rule_id",
+        "reason",
+        "risk",
+        "matched_rules",
+        "in_plan",
+        "tags",
+        "source",
+        "taint_sources"
+      ],
+      "title": "ActionContext",
+      "type": "object"
+    },
+    "Approval": {
+      "description": "A question to a human: everything a banner needs, and how to answer it.",
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ActionContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "body": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "code": "#/$defs/CodeBlock",
+                "facts": "#/$defs/FactsBlock",
+                "findings": "#/$defs/FindingsBlock",
+                "text": "#/$defs/TextBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/TextBlock"
+              },
+              {
+                "$ref": "#/$defs/FactsBlock"
+              },
+              {
+                "$ref": "#/$defs/FindingsBlock"
+              }
+            ]
+          },
+          "title": "Body",
+          "type": "array"
+        },
+        "choices": {
+          "items": {
+            "$ref": "#/$defs/Choice"
+          },
+          "title": "Choices",
+          "type": "array"
+        },
+        "eyebrow": {
+          "title": "Eyebrow",
+          "type": "string"
+        },
+        "free_text": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FreeText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "headline": {
+          "title": "Headline",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ApprovalKind"
+        },
+        "layout": {
+          "$ref": "#/$defs/Layout",
+          "default": "standard"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "on_timeout": {
+          "title": "On Timeout",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "step": {
+          "title": "Step",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 120,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "timeout_text": {
+          "title": "Timeout Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "step",
+        "phase",
+        "eyebrow",
+        "headline",
+        "body",
+        "note",
+        "choices",
+        "free_text",
+        "layout",
+        "timeout_seconds",
+        "on_timeout",
+        "timeout_text",
+        "action"
+      ],
+      "title": "Approval",
+      "type": "object"
+    },
+    "ApprovalKind": {
+      "enum": [
+        "action",
+        "plan",
+        "amendment",
+        "breaker",
+        "redteam",
+        "question"
+      ],
+      "title": "ApprovalKind",
+      "type": "string"
+    },
+    "ApprovalNeededEvent": {
+      "description": "A human is asked. The panel's banner renders from ``approval`` alone.",
+      "properties": {
+        "approval": {
+          "$ref": "#/$defs/Approval"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "approval_needed",
+          "default": "approval_needed",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "approval"
+      ],
+      "title": "ApprovalNeededEvent",
+      "type": "object"
+    },
+    "ApprovalResolvedEvent": {
+      "description": "The pending approval got its answer (a timeout, a stop or an error count as the\napproval's ``on_timeout`` choice or as no).",
+      "properties": {
+        "answer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        },
+        "approval_id": {
+          "title": "Approval Id",
+          "type": "string"
+        },
+        "approval_kind": {
+          "$ref": "#/$defs/ApprovalKind"
+        },
+        "approved": {
+          "title": "Approved",
+          "type": "boolean"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "by": {
+          "$ref": "#/$defs/ResolvedBy"
+        },
+        "choice": {
+          "title": "Choice",
+          "type": "string"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "approval_resolved",
+          "default": "approval_resolved",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "step": {
+          "title": "Step",
+          "type": "integer"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "approval_id",
+        "approval_kind",
+        "step",
+        "choice",
+        "approved",
+        "by",
+        "answer"
+      ],
+      "title": "ApprovalResolvedEvent",
+      "type": "object"
+    },
+    "BreakerCounts": {
+      "properties": {
+        "denials": {
+          "title": "Denials",
+          "type": "integer"
+        },
+        "injection_denials": {
+          "title": "Injection Denials",
+          "type": "integer"
+        },
+        "trips": {
+          "title": "Trips",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "denials",
+        "injection_denials",
+        "trips"
+      ],
+      "title": "BreakerCounts",
+      "type": "object"
+    },
+    "BreakerEvent": {
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "denials": {
+          "title": "Denials",
+          "type": "integer"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "injection_denials": {
+          "title": "Injection Denials",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "breaker",
+          "default": "breaker",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "state": {
+          "$ref": "#/$defs/BreakerState"
+        },
+        "trips": {
+          "title": "Trips",
+          "type": "integer"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "state",
+        "reason",
+        "source",
+        "denials",
+        "injection_denials",
+        "trips"
+      ],
+      "title": "BreakerEvent",
+      "type": "object"
+    },
+    "BreakerState": {
+      "enum": [
+        "tripped",
+        "resumed",
+        "killed"
+      ],
+      "title": "BreakerState",
+      "type": "string"
+    },
+    "Budget": {
+      "description": "Usage so far against the run's limits. ``tokens_reported`` is false when any count\nwas estimated (about four characters per token); estimated numbers are never shown as\nmeasured.",
+      "properties": {
+        "completion_tokens": {
+          "default": 0,
+          "title": "Completion Tokens",
+          "type": "integer"
+        },
+        "max_seconds": {
+          "title": "Max Seconds",
+          "type": "number"
+        },
+        "max_steps": {
+          "title": "Max Steps",
+          "type": "integer"
+        },
+        "max_tokens": {
+          "title": "Max Tokens",
+          "type": "integer"
+        },
+        "prompt_tokens": {
+          "default": 0,
+          "title": "Prompt Tokens",
+          "type": "integer"
+        },
+        "seconds": {
+          "title": "Seconds",
+          "type": "number"
+        },
+        "steps": {
+          "title": "Steps",
+          "type": "integer"
+        },
+        "tokens": {
+          "title": "Tokens",
+          "type": "integer"
+        },
+        "tokens_reported": {
+          "title": "Tokens Reported",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "steps",
+        "max_steps",
+        "tokens",
+        "max_tokens",
+        "tokens_reported",
+        "prompt_tokens",
+        "completion_tokens",
+        "seconds",
+        "max_seconds"
+      ],
+      "title": "Budget",
+      "type": "object"
+    },
+    "CapabilityCount": {
+      "properties": {
+        "attempted": {
+          "title": "Attempted",
+          "type": "integer"
+        },
+        "blocked": {
+          "title": "Blocked",
+          "type": "integer"
+        },
+        "capability": {
+          "title": "Capability",
+          "type": "string"
+        },
+        "executed": {
+          "title": "Executed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "capability",
+        "attempted",
+        "executed",
+        "blocked"
+      ],
+      "title": "CapabilityCount",
+      "type": "object"
+    },
+    "CheckpointEvent": {
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "checkpoint": {
+          "title": "Checkpoint",
+          "type": "integer"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "checkpoint",
+          "default": "checkpoint",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "restored_by": {
+          "anyOf": [
+            {
+              "enum": [
+                "agent",
+                "human"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Restored By"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/CheckpointState"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "checkpoint",
+        "state",
+        "files",
+        "step",
+        "restored_by",
+        "error"
+      ],
+      "title": "CheckpointEvent",
+      "type": "object"
+    },
+    "CheckpointState": {
+      "enum": [
+        "saved",
+        "restored",
+        "failed"
+      ],
+      "title": "CheckpointState",
+      "type": "string"
+    },
+    "Choice": {
+      "description": "One button. ``approves`` is what the backend does with it (yes or no).",
+      "properties": {
+        "approves": {
+          "title": "Approves",
+          "type": "boolean"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "primary": {
+          "default": false,
+          "title": "Primary",
+          "type": "boolean"
+        },
+        "shortcut": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shortcut"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "approves",
+        "primary",
+        "shortcut"
+      ],
+      "title": "Choice",
+      "type": "object"
+    },
+    "ClippedEntry": {
+      "description": "A manifest entry removed because the rulebook would refuse it anyway.",
+      "properties": {
+        "field": {
+          "title": "Field",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "value",
+        "reason"
+      ],
+      "title": "ClippedEntry",
+      "type": "object"
+    },
+    "CodeBlock": {
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "type": {
+          "const": "code",
+          "default": "code",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "title": "CodeBlock",
+      "type": "object"
+    },
+    "Decision": {
+      "enum": [
+        "allow",
+        "ask",
+        "deny"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "DecisionCounts": {
+      "properties": {
+        "allowed": {
+          "default": 0,
+          "title": "Allowed",
+          "type": "integer"
+        },
+        "asked": {
+          "default": 0,
+          "title": "Asked",
+          "type": "integer"
+        },
+        "denied": {
+          "default": 0,
+          "title": "Denied",
+          "type": "integer"
+        },
+        "injection_tagged": {
+          "default": 0,
+          "title": "Injection Tagged",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "allowed",
+        "denied",
+        "asked",
+        "injection_tagged"
+      ],
+      "title": "DecisionCounts",
+      "type": "object"
+    },
+    "DeliverEvent": {
+      "properties": {
+        "blocked": {
+          "title": "Blocked",
+          "type": "boolean"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "excluded": {
+          "items": {
+            "$ref": "#/$defs/ExcludedFile"
+          },
+          "title": "Excluded",
+          "type": "array"
+        },
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "deliver",
+          "default": "deliver",
+          "title": "Kind",
+          "type": "string"
+        },
+        "patch_bytes": {
+          "default": 0,
+          "title": "Patch Bytes",
+          "type": "integer"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "released_by_human": {
+          "default": false,
+          "title": "Released By Human",
+          "type": "boolean"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "files",
+        "excluded",
+        "blocked",
+        "released_by_human",
+        "patch_bytes"
+      ],
+      "title": "DeliverEvent",
+      "type": "object"
+    },
+    "DoneEvent": {
+      "description": "Always the last event of a run: the final picture the run list and report use.",
+      "properties": {
+        "breaker_trips": {
+          "default": 0,
+          "title": "Breaker Trips",
+          "type": "integer"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "changed_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Changed Files",
+          "type": "array"
+        },
+        "checkpoints": {
+          "default": 0,
+          "title": "Checkpoints",
+          "type": "integer"
+        },
+        "counts": {
+          "$ref": "#/$defs/DecisionCounts"
+        },
+        "delivered": {
+          "default": false,
+          "title": "Delivered",
+          "type": "boolean"
+        },
+        "delivery_blocked": {
+          "default": false,
+          "title": "Delivery Blocked",
+          "type": "boolean"
+        },
+        "final_tests": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TestRun"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "guard": {
+          "title": "Guard",
+          "type": "boolean"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "done",
+          "default": "done",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Plan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "released_by_human": {
+          "default": false,
+          "title": "Released By Human",
+          "type": "boolean"
+        },
+        "retries": {
+          "default": 0,
+          "title": "Retries",
+          "type": "integer"
+        },
+        "rollbacks": {
+          "default": 0,
+          "title": "Rollbacks",
+          "type": "integer"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "sandbox_runtime": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sandbox Runtime"
+        },
+        "scout_flags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Scout Flags",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/RunStatus"
+        },
+        "steps": {
+          "title": "Steps",
+          "type": "integer"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "suspicious_pages": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Suspicious Pages",
+          "type": "array"
+        },
+        "trifecta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trifecta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        },
+        "verified": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verified"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "status",
+        "summary",
+        "steps",
+        "guard",
+        "provider",
+        "model",
+        "sandbox_runtime",
+        "counts",
+        "plan",
+        "verified",
+        "retries",
+        "breaker_trips",
+        "rollbacks",
+        "checkpoints",
+        "delivered",
+        "delivery_blocked",
+        "released_by_human",
+        "changed_files",
+        "final_tests",
+        "scout_flags",
+        "suspicious_pages",
+        "trifecta"
+      ],
+      "title": "DoneEvent",
+      "type": "object"
+    },
+    "ExcludedFile": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "reason"
+      ],
+      "title": "ExcludedFile",
+      "type": "object"
+    },
+    "Fact": {
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "mono": {
+          "default": true,
+          "title": "Mono",
+          "type": "boolean"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value",
+        "mono"
+      ],
+      "title": "Fact",
+      "type": "object"
+    },
+    "FactsBlock": {
+      "properties": {
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/Fact"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "type": {
+          "const": "facts",
+          "default": "facts",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "rows"
+      ],
+      "title": "FactsBlock",
+      "type": "object"
+    },
+    "FindingItem": {
+      "properties": {
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "text"
+      ],
+      "title": "FindingItem",
+      "type": "object"
+    },
+    "FindingsBlock": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/FindingItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "type": {
+          "const": "findings",
+          "default": "findings",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "items"
+      ],
+      "title": "FindingsBlock",
+      "type": "object"
+    },
+    "FreeText": {
+      "description": "A text box whose content is sent with an approving choice.",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "max_length": {
+          "default": 1000,
+          "title": "Max Length",
+          "type": "integer"
+        },
+        "placeholder": {
+          "title": "Placeholder",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label",
+        "placeholder",
+        "max_length",
+        "required"
+      ],
+      "title": "FreeText",
+      "type": "object"
+    },
+    "GuardEvent": {
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "guard",
+          "default": "guard",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "stop_reason": {
+          "enum": [
+            "budget.steps",
+            "budget.tokens",
+            "budget.time",
+            "loop.repeat"
+          ],
+          "title": "Stop Reason",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "stop_reason",
+        "detail"
+      ],
+      "title": "GuardEvent",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Layout": {
+      "description": "``standard``: text left, buttons right. ``question``: the box spans the width and\nthe buttons sit underneath.",
+      "enum": [
+        "standard",
+        "question"
+      ],
+      "title": "Layout",
+      "type": "string"
+    },
+    "LearnEvent": {
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "learn",
+          "default": "learn",
+          "title": "Kind",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "suggestions": {
+          "items": {
+            "$ref": "#/$defs/LearnSuggestion"
+          },
+          "title": "Suggestions",
+          "type": "array"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "suggestions",
+        "notes"
+      ],
+      "title": "LearnEvent",
+      "type": "object"
+    },
+    "LearnSuggestion": {
+      "properties": {
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "suspicious_file",
+            "ask_host",
+            "deny_command"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "rule_id",
+        "explanation",
+        "target"
+      ],
+      "title": "LearnSuggestion",
+      "type": "object"
+    },
+    "Manifest": {
+      "description": "The capabilities a plan declares. Paths are workspace-relative globs (``dir/**``).",
+      "properties": {
+        "commands": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Commands",
+          "type": "array"
+        },
+        "may_edit_tests": {
+          "default": false,
+          "title": "May Edit Tests",
+          "type": "boolean"
+        },
+        "network": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network",
+          "type": "array"
+        },
+        "read_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Read Paths",
+          "type": "array"
+        },
+        "write_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Write Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "read_paths",
+        "write_paths",
+        "commands",
+        "network",
+        "may_edit_tests"
+      ],
+      "title": "Manifest",
+      "type": "object"
+    },
+    "MatchedRule": {
+      "description": "One rule that matched an action, with the layer it came from.",
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/RuleSource"
+        }
+      },
+      "required": [
+        "rule_id",
+        "source",
+        "decision",
+        "risk",
+        "reason"
+      ],
+      "title": "MatchedRule",
+      "type": "object"
+    },
+    "Phase": {
+      "description": "Pipeline stage an event belongs to.",
+      "enum": [
+        "understand",
+        "scout",
+        "plan",
+        "approve",
+        "act",
+        "verify",
+        "redteam",
+        "deliver",
+        "report",
+        "learn"
+      ],
+      "title": "Phase",
+      "type": "string"
+    },
+    "Plan": {
+      "description": "A plan as shown to people: what the agent will do and what it may touch.",
+      "properties": {
+        "clipped": {
+          "items": {
+            "$ref": "#/$defs/ClippedEntry"
+          },
+          "title": "Clipped",
+          "type": "array"
+        },
+        "done_criteria": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Done Criteria",
+          "type": "array"
+        },
+        "edited_by_human": {
+          "default": false,
+          "title": "Edited By Human",
+          "type": "boolean"
+        },
+        "manifest": {
+          "$ref": "#/$defs/Manifest"
+        },
+        "planner_risk": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Risk"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "risk_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Risk Reasons",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "steps",
+        "done_criteria",
+        "manifest",
+        "risk",
+        "risk_reasons",
+        "planner_risk",
+        "edited_by_human",
+        "clipped"
+      ],
+      "title": "Plan",
+      "type": "object"
+    },
+    "PlanEvent": {
+      "properties": {
+        "added": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Manifest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "approval_required": {
+          "default": false,
+          "title": "Approval Required",
+          "type": "boolean"
+        },
+        "approved_by_human": {
+          "default": false,
+          "title": "Approved By Human",
+          "type": "boolean"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "plan",
+          "default": "plan",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Plan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scout_flags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Scout Flags",
+          "type": "array"
+        },
+        "state": {
+          "$ref": "#/$defs/PlanState"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "state",
+        "plan",
+        "scout_flags",
+        "approval_required",
+        "approved_by_human",
+        "added",
+        "error"
+      ],
+      "title": "PlanEvent",
+      "type": "object"
+    },
+    "PlanState": {
+      "enum": [
+        "proposed",
+        "invalid",
+        "rejected",
+        "approved",
+        "locked",
+        "amended"
+      ],
+      "title": "PlanState",
+      "type": "string"
+    },
+    "ReaderInfo": {
+      "description": "What the quarantined reader said about a fetched page (the agent saw only this).",
+      "properties": {
+        "answer": {
+          "title": "Answer",
+          "type": "string"
+        },
+        "contains_instructions": {
+          "title": "Contains Instructions",
+          "type": "boolean"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "answer",
+        "contains_instructions"
+      ],
+      "title": "ReaderInfo",
+      "type": "object"
+    },
+    "RedteamEvent": {
+      "properties": {
+        "blocked": {
+          "title": "Blocked",
+          "type": "boolean"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/RedteamFinding"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "redteam",
+          "default": "redteam",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "skipped_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skipped Reason"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        },
+        "unreviewed": {
+          "default": false,
+          "title": "Unreviewed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "findings",
+        "blocked",
+        "unreviewed",
+        "skipped_reason"
+      ],
+      "title": "RedteamEvent",
+      "type": "object"
+    },
+    "RedteamFinding": {
+      "properties": {
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "severity": {
+          "$ref": "#/$defs/Risk"
+        }
+      },
+      "required": [
+        "severity",
+        "file",
+        "line",
+        "explanation"
+      ],
+      "title": "RedteamFinding",
+      "type": "object"
+    },
+    "ReportEvent": {
+      "properties": {
+        "blocks": {
+          "title": "Blocks",
+          "type": "integer"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "capabilities": {
+          "items": {
+            "$ref": "#/$defs/CapabilityCount"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "report",
+          "default": "report",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "trifecta": {
+          "$ref": "#/$defs/Trifecta"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "trifecta",
+        "blocks",
+        "capabilities"
+      ],
+      "title": "ReportEvent",
+      "type": "object"
+    },
+    "ResolvedBy": {
+      "enum": [
+        "human",
+        "timeout",
+        "stop",
+        "error"
+      ],
+      "title": "ResolvedBy",
+      "type": "string"
+    },
+    "Risk": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Risk",
+      "type": "string"
+    },
+    "RuleSource": {
+      "description": "Where a matched rule came from. Plans and learned rules can only narrow.",
+      "enum": [
+        "rulebook",
+        "plan",
+        "learned",
+        "taint"
+      ],
+      "title": "RuleSource",
+      "type": "string"
+    },
+    "RunStatus": {
+      "description": "A run's status: ``running`` while it lives, then exactly one final status.",
+      "enum": [
+        "running",
+        "finished",
+        "verify_failed",
+        "needs_clarification",
+        "plan_invalid",
+        "plan_rejected",
+        "budget.steps",
+        "budget.tokens",
+        "budget.time",
+        "loop.repeat",
+        "killed",
+        "invalid_reply",
+        "error",
+        "stopped",
+        "interrupted"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "ScoutEvent": {
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "files_mapped": {
+          "default": 0,
+          "title": "Files Mapped",
+          "type": "integer"
+        },
+        "flags": {
+          "items": {
+            "$ref": "#/$defs/ScoutFlag"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "ignored_hints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ignored Hints",
+          "type": "array"
+        },
+        "kind": {
+          "const": "scout",
+          "default": "scout",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_calls": {
+          "default": 0,
+          "title": "Model Calls",
+          "type": "integer"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "skipped": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Skipped",
+          "type": "array"
+        },
+        "test_command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Test Command"
+        },
+        "test_command_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Test Command Source"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "flags",
+        "files_mapped",
+        "model_calls",
+        "skipped",
+        "test_command",
+        "test_command_source",
+        "ignored_hints"
+      ],
+      "title": "ScoutEvent",
+      "type": "object"
+    },
+    "ScoutFlag": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "reason"
+      ],
+      "title": "ScoutFlag",
+      "type": "object"
+    },
+    "StepEvent": {
+      "description": "One agent action and the gate's decision on it. A step is *blocked* when it was\ndenied, or asked and not approved; ``blocked_sentence`` is then Sandcage's own\nsentence for it.",
+      "properties": {
+        "agent_reason": {
+          "default": "",
+          "title": "Agent Reason",
+          "type": "string"
+        },
+        "approved": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved"
+        },
+        "args": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Args",
+          "type": "object"
+        },
+        "blocked": {
+          "title": "Blocked",
+          "type": "boolean"
+        },
+        "blocked_sentence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocked Sentence"
+        },
+        "breaker": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BreakerCounts"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "checkpoint": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checkpoint"
+        },
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        },
+        "executed": {
+          "title": "Executed",
+          "type": "boolean"
+        },
+        "guard": {
+          "title": "Guard",
+          "type": "boolean"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "in_plan": {
+          "default": true,
+          "title": "In Plan",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "step",
+          "default": "step",
+          "title": "Kind",
+          "type": "string"
+        },
+        "masked_secrets": {
+          "default": false,
+          "title": "Masked Secrets",
+          "type": "boolean"
+        },
+        "matched_rules": {
+          "items": {
+            "$ref": "#/$defs/MatchedRule"
+          },
+          "title": "Matched Rules",
+          "type": "array"
+        },
+        "observed": {
+          "default": false,
+          "title": "Observed",
+          "type": "boolean"
+        },
+        "output_preview": {
+          "default": "",
+          "title": "Output Preview",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "reader": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReaderInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "step": {
+          "title": "Step",
+          "type": "integer"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "taint_sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Taint Sources",
+          "type": "array"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "step",
+        "guard",
+        "tool",
+        "args",
+        "agent_reason",
+        "decision",
+        "rule_id",
+        "reason",
+        "risk",
+        "tags",
+        "source",
+        "taint_sources",
+        "matched_rules",
+        "in_plan",
+        "observed",
+        "approved",
+        "executed",
+        "blocked",
+        "blocked_sentence",
+        "output_preview",
+        "checkpoint",
+        "masked_secrets",
+        "reader",
+        "breaker"
+      ],
+      "title": "StepEvent",
+      "type": "object"
+    },
+    "StoppedEvent": {
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "by": {
+          "title": "By",
+          "type": "string"
+        },
+        "guard": {
+          "title": "Guard",
+          "type": "boolean"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "stopped",
+          "default": "stopped",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "by",
+        "summary",
+        "guard"
+      ],
+      "title": "StoppedEvent",
+      "type": "object"
+    },
+    "TestRun": {
+      "description": "A test run's outcome, without its output.",
+      "properties": {
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "timed_out": {
+          "default": false,
+          "title": "Timed Out",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "command",
+        "passed",
+        "exit_code",
+        "timed_out"
+      ],
+      "title": "TestRun",
+      "type": "object"
+    },
+    "TextBlock": {
+      "properties": {
+        "muted": {
+          "default": false,
+          "title": "Muted",
+          "type": "boolean"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "type": {
+          "const": "text",
+          "default": "text",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "text",
+        "muted"
+      ],
+      "title": "TextBlock",
+      "type": "object"
+    },
+    "Trifecta": {
+      "description": "The lethal trifecta: were private data, untrusted content and a way out ever all\npresent at the same step?",
+      "properties": {
+        "all_at_once": {
+          "title": "All At Once",
+          "type": "boolean"
+        },
+        "private_data": {
+          "title": "Private Data",
+          "type": "boolean"
+        },
+        "untrusted_content": {
+          "title": "Untrusted Content",
+          "type": "boolean"
+        },
+        "way_out": {
+          "title": "Way Out",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "private_data",
+        "untrusted_content",
+        "way_out",
+        "all_at_once"
+      ],
+      "title": "Trifecta",
+      "type": "object"
+    },
+    "UnderstandEvent": {
+      "properties": {
+        "answer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "done_criteria": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Done Criteria",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "understand",
+          "default": "understand",
+          "title": "Kind",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "question": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Question"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/UnderstandState"
+        },
+        "task": {
+          "title": "Task",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        },
+        "valid": {
+          "default": true,
+          "title": "Valid",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "state",
+        "task",
+        "done_criteria",
+        "question",
+        "answer",
+        "valid"
+      ],
+      "title": "UnderstandEvent",
+      "type": "object"
+    },
+    "UnderstandState": {
+      "enum": [
+        "understood",
+        "asking",
+        "answered",
+        "unanswered"
+      ],
+      "title": "UnderstandState",
+      "type": "string"
+    },
+    "VerifyCheck": {
+      "properties": {
+        "detail": {
+          "default": "",
+          "title": "Detail",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "detail"
+      ],
+      "title": "VerifyCheck",
+      "type": "object"
+    },
+    "VerifyEvent": {
+      "properties": {
+        "attempt": {
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Budget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/VerifyCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "id": {
+          "default": 0,
+          "title": "Id",
+          "type": "integer"
+        },
+        "judged_by_model": {
+          "default": false,
+          "title": "Judged By Model",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "verify",
+          "default": "verify",
+          "title": "Kind",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "phase": {
+          "$ref": "#/$defs/Phase"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "tests": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TestRun"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "phase",
+        "ts",
+        "budget",
+        "kind",
+        "attempt",
+        "passed",
+        "reasons",
+        "checks",
+        "judged_by_model",
+        "tests"
+      ],
+      "title": "VerifyEvent",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Every event a Sandcage run can emit (generated from Python).",
+  "discriminator": {
+    "mapping": {
+      "approval_needed": "#/$defs/ApprovalNeededEvent",
+      "approval_resolved": "#/$defs/ApprovalResolvedEvent",
+      "breaker": "#/$defs/BreakerEvent",
+      "checkpoint": "#/$defs/CheckpointEvent",
+      "deliver": "#/$defs/DeliverEvent",
+      "done": "#/$defs/DoneEvent",
+      "guard": "#/$defs/GuardEvent",
+      "learn": "#/$defs/LearnEvent",
+      "plan": "#/$defs/PlanEvent",
+      "redteam": "#/$defs/RedteamEvent",
+      "report": "#/$defs/ReportEvent",
+      "scout": "#/$defs/ScoutEvent",
+      "step": "#/$defs/StepEvent",
+      "stopped": "#/$defs/StoppedEvent",
+      "understand": "#/$defs/UnderstandEvent",
+      "verify": "#/$defs/VerifyEvent"
+    },
+    "propertyName": "kind"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/UnderstandEvent"
+    },
+    {
+      "$ref": "#/$defs/ScoutEvent"
+    },
+    {
+      "$ref": "#/$defs/PlanEvent"
+    },
+    {
+      "$ref": "#/$defs/ApprovalNeededEvent"
+    },
+    {
+      "$ref": "#/$defs/ApprovalResolvedEvent"
+    },
+    {
+      "$ref": "#/$defs/StepEvent"
+    },
+    {
+      "$ref": "#/$defs/CheckpointEvent"
+    },
+    {
+      "$ref": "#/$defs/BreakerEvent"
+    },
+    {
+      "$ref": "#/$defs/GuardEvent"
+    },
+    {
+      "$ref": "#/$defs/VerifyEvent"
+    },
+    {
+      "$ref": "#/$defs/RedteamEvent"
+    },
+    {
+      "$ref": "#/$defs/DeliverEvent"
+    },
+    {
+      "$ref": "#/$defs/ReportEvent"
+    },
+    {
+      "$ref": "#/$defs/LearnEvent"
+    },
+    {
+      "$ref": "#/$defs/StoppedEvent"
+    },
+    {
+      "$ref": "#/$defs/DoneEvent"
+    }
+  ],
+  "title": "Event"
+}
