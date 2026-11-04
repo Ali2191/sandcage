@@ -31,6 +31,8 @@ export interface ReportLine {
 /** What a human who released a withheld patch after the report was written is told. */
 const RELEASED_PILL = "Released by you";
 const RELEASED_HEADLINE = "The agent finished, and you released the patch after reviewing it.";
+/** The run did not finish with the checks passing; a human still released what it left. */
+const RELEASED_UNFINISHED_HEADLINE = "The run did not finish with the checks passing. You released its changes after reviewing them.";
 const WITHHELD_PILL = "Withheld";
 
 /**
@@ -44,8 +46,9 @@ export function reportLine(report: ReportEvent | undefined, done: DoneEvent | un
   const headline = report?.headline ?? done?.summary ?? "";
   const declinedLine = report?.declined_line ?? null;
   if (pill === WITHHELD_PILL) {
+    const unfinished = done?.status !== undefined && done.status !== "finished";
     return released
-      ? { pill: RELEASED_PILL, headline: RELEASED_HEADLINE, declinedLine, withheld: false }
+      ? { pill: RELEASED_PILL, headline: unfinished ? RELEASED_UNFINISHED_HEADLINE : RELEASED_HEADLINE, declinedLine, withheld: false }
       : { pill, headline, declinedLine, withheld: true };
   }
   return { pill, headline, declinedLine, withheld: false };

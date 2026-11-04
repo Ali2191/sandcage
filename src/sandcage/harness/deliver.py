@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Final
 
 from sandcage.contract.common import Phase
-from sandcage.contract.events import DeliverEvent, ExcludedFile, VerifyCheck
+from sandcage.contract.events import DeliverEvent, ExcludedFile, RunStatus, VerifyCheck
 from sandcage.masking import mask
 from sandcage.report.report import (
     ReportInput,
@@ -36,7 +36,7 @@ REPORT_MD_NAME: Final = "REPORT.md"
 EXCLUDED_SECRET: Final = "secret file: never delivered"  # noqa: S105 - a reason
 EXCLUDED_BINARY: Final = "binary or very large file"
 EXCLUDED_MASKED: Final = "contains secret-looking text that masking would change"
-RELEASE_NOTE: Final = "Released by a human after review: the patch was withheld by the red-team."
+RELEASE_NOTE: Final = "Released by a human after review: the patch had been withheld."
 
 
 @dataclass(frozen=True)
@@ -112,9 +112,13 @@ def summary_markdown(
     if declined:
         lines += [declined, ""]
     if source.withheld:
+        why = (
+            "The red-team found a high-severity issue or could not review it."
+            if source.status is RunStatus.FINISHED
+            else "The run did not finish with the checks passing."
+        )
         lines += [
-            "> **The patch is withheld.** The red-team found a high-severity issue or could not "
-            "review it. Read the findings below before releasing it.",
+            f"> **The patch is withheld.** {why} Read the findings below before releasing it.",
             "",
         ]
     verified = source.verified

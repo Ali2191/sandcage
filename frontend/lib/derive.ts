@@ -595,19 +595,22 @@ export function outcome(events: readonly Event[], releasedAfterDone = false): Ou
   const done = doneEvent(events);
   if (!done) return { kind: "running" };
   if (done.status === "stopped") return { kind: "stopped" };
-  if (done.status !== "finished") return { kind: "ended", status: done.status };
   const d = deliver(events);
   const blocked = done.delivery_blocked || (d?.blocked ?? false);
   const released = releasedAfterDone || done.released_by_human || (d?.released_by_human ?? false);
+  // An unfinished run can leave changes behind; they are withheld until a human releases them.
   if (blocked && !released) return { kind: "withheld" };
-  if (released) return { kind: "released" };
+  if (released && (blocked || done.status === "finished")) return { kind: "released" };
+  if (done.status !== "finished") return { kind: "ended", status: done.status };
   return { kind: "delivered" };
 }
 
 /** Whether a patch exists to show a card for (never for a stopped or undelivered run). */
 export function hasPatchCard(events: readonly Event[]): boolean {
   const o = outcome(events);
-  if (o.kind === "stopped") return false;
+  // Only a delivered, withheld or released patch has a card; a run that ended without a
+  // verified result never shows a Download button.
+  if (o.kind !== "delivered" && o.kind !== "withheld" && o.kind !== "released") return false;
   const done = doneEvent(events);
   return deliver(events) !== undefined || (done?.delivered ?? false);
 }

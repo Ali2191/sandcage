@@ -45,14 +45,12 @@ from sandcage.contract.events import (
 from sandcage.contract.wording import target_hosts
 from sandcage.masking import mask
 from sandcage.policy import Decision
+from sandcage.report.endings import OUTCOME_STOPPED, OUTCOME_WITHHELD, ending
 from sandcage.sandbox.fetcher import Hop
 
 INJECTION_TAG: Final = "prompt_injection_suspected"
 NETWORK_TOOLS: Final = frozenset({"http_get"})
 CAPABILITIES: Final = ("read", "write", "command", "network", "control")
-OUTCOME_DELIVERED: Final = "Delivered"
-OUTCOME_WITHHELD: Final = "Withheld"
-OUTCOME_STOPPED: Final = "Stopped by you"
 _UNSAFE_MD: Final = re.compile(r"[`<>\r\n\t]+")
 
 
@@ -70,42 +68,44 @@ def md_text(value: object, limit: int = 300) -> str:
 
 
 def outcome(status: RunStatus, *, withheld: bool) -> str:
-    """The solid outcome pill. A withheld patch is never "Delivered"."""
+    """The solid outcome pill, from the one wording catalogue. Changes held back for review
+    read "Withheld"; only a verified, cleared run reads "Delivered"."""
     if status is RunStatus.STOPPED:
         return OUTCOME_STOPPED
     if withheld:
         return OUTCOME_WITHHELD
-    if status is RunStatus.FINISHED:
-        return OUTCOME_DELIVERED
-    return status.value
+    return ending(status).label
 
 
 def headline(status: RunStatus, blocked: int, *, withheld: bool) -> str:
-    """The report headline (PAGES.md section 5, plus the withheld case). ``blocked`` counts
-    gate denials only (:func:`is_denied`); asks a human did not approve never count."""
+    """The report headline (PAGES.md section 5, plus the withheld and unfinished cases).
+    ``blocked`` counts gate denials only (:func:`is_denied`); asks a human did not approve
+    never count."""
     if status is RunStatus.STOPPED:
         if blocked:
             return f"You stopped this run. Before that, Sandcage blocked it {times(blocked)}."
-        return "You stopped this run. Nothing left the cage."
-    if withheld:
-        if blocked:
-            return (
-                f"The agent tried to cross the line. Sandcage blocked it {times(blocked)}, "
-                "and the patch is withheld until you review it."
-            )
-        return "The run finished inside the cage, but the patch is withheld until you review it."
+        return ending(status).plain
+    entry = ending(status)
     if status is RunStatus.FINISHED:
+        if withheld:
+            if blocked:
+                return (
+                    f"The agent tried to cross the line. Sandcage blocked it {times(blocked)}, "
+                    "and the patch is withheld until you review it."
+                )
+            return (
+                "The run finished inside the cage, but the patch is withheld until you review it."
+            )
         if blocked:
             return (
                 f"The agent tried to cross the line. Sandcage blocked it {times(blocked)}, "
                 "and the task still got done."
             )
-        return "The run finished inside the cage, and the task got done."
+        return entry.plain
+    text = entry.withheld if withheld and entry.withheld else entry.plain
     if blocked:
-        return (
-            f"Sandcage blocked the agent {times(blocked)}. The run ended before the task was done."
-        )
-    return "The run ended before the task was done."
+        return f"Sandcage blocked the agent {times(blocked)}. {text}"
+    return text
 
 
 # --- per-step classification --------------------------------------------------------------
@@ -497,6 +497,8 @@ def _after_lines(source: ReportInput) -> list[str]:
         lines.append("- You stopped this run, so no patch was made.")
     elif source.withheld:
         lines.append("- **The patch is withheld.** A human must release it before download.")
+    elif source.status is not RunStatus.FINISHED:
+        lines.append("- Nothing is delivered: the run did not finish with the checks passing.")
     elif source.released_by_human:
         lines.append("- The patch was withheld, then released by you.")
     for path in source.delivered_files:

@@ -26,7 +26,10 @@ describe("labels", () => {
     expect(runOutcome(row({ status: "stopped" }))).toEqual({ text: "stopped", tone: "muted" });
     expect(runOutcome(row({}))).toEqual({ text: "2 blocked", tone: "ember" });
     expect(runOutcome(row({ counts: { allowed: 9, denied: 0, asked: 0, injection_tagged: 0 } }))).toEqual({ text: "clean", tone: "muted" });
-    expect(runOutcome(row({ status: "verify_failed", counts: null }))).toEqual({ text: "verify_failed", tone: "plain" });
+    expect(runOutcome(row({ status: "verify_failed", counts: null, outcome: "Not verified" }))).toEqual({ text: "Not verified", tone: "plain" });
+    expect(runOutcome(row({ status: "plan_rejected", outcome: "Plan rejected" }))).toEqual({ text: "Plan rejected", tone: "plain" });
+    expect(runOutcome(row({ status: "verify_failed", outcome: "Withheld" }))).toEqual({ text: "Withheld", tone: "ember" });
+    expect(runOutcome(row({ status: "error", outcome: null }))).toEqual({ text: "Ended", tone: "plain" });
   });
 
   it("builds the meta line and leaves out what is missing", () => {

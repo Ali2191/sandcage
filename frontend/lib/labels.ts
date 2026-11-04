@@ -14,15 +14,15 @@ export function modelLabel(row: Pick<RunRow, "provider" | "model">): string | nu
 export type RunOutcome = { text: string; tone: "muted" | "ember" | "plain" };
 
 /** The outcome shown at the right of a run row. */
-export function runOutcome(row: Pick<RunRow, "status" | "counts">): RunOutcome {
+export function runOutcome(row: Pick<RunRow, "status" | "counts" | "outcome">): RunOutcome {
   if (row.status === "running") return { text: "running…", tone: "muted" };
   if (row.status === "stopped") return { text: "stopped", tone: "muted" };
   if (row.status === "finished") {
     const blocked = row.counts ? row.counts.denied : 0;
     return blocked > 0 ? { text: `${blocked} blocked`, tone: "ember" } : { text: "clean", tone: "muted" };
   }
-  const blocked = row.counts ? row.counts.denied : 0;
-  return blocked > 0 ? { text: `${blocked} blocked`, tone: "ember" } : { text: row.status, tone: "plain" };
+  // Any other end: the backend's own label ("Not verified", "Plan rejected", ...), never the raw status.
+  return { text: row.outcome ?? "Ended", tone: row.outcome === "Withheld" ? "ember" : "plain" };
 }
 
 /** "6 chars · n steps · model · date" for a run row (parts that are missing are left out). */

@@ -84,7 +84,7 @@ for (const [prefix, viewport, mobile] of [["", { width: 1440, height: 900 }, fal
       await expect(banner(page)).toContainText("A QUESTION");
       await shot(page, `${prefix}live-question`);
       await page.getByRole("button", { name: "Stop the run" }).click();
-      await expect(page.getByText("needs_clarification", { exact: true })).toBeVisible();
+      await expect(page.getByText("Needs an answer", { exact: true })).toBeVisible();
       await shot(page, `${prefix}report-needs-clarification`);
 
       const s = await mock.startRun("demo");

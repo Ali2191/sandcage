@@ -65,7 +65,7 @@ Start it with `python -m sandcage.api` (or `make api`).
  "status": "running|finished|stopped|interrupted|...", "created": 1793000000.0,
  "finished": null, "provider": "scripted", "model": null, "sandbox_runtime": null,
  "steps": 9, "counts": {"allowed": 6, "denied": 2, "asked": 1, "injection_tagged": 2},
- "tokens": 1234, "tokens_reported": false, "outcome": "Delivered|Withheld|Stopped by you|<status>|null",
+ "tokens": 1234, "tokens_reported": false, "outcome": "Delivered|Withheld|Stopped by you|<label>|null",
  "delivered": true, "delivery_blocked": false, "released_by_human": false}
 ```
 
@@ -83,6 +83,16 @@ estimated.
 | `POST /runs/{id}/approve` | body `{"approval_id": str, "choice": str, "answer"?: str}` → `{"id", "approval_id", "choice", "approved"}`. `answer` only for an approval with `free_text` (max 1000 after trimming). | `404`; `409` nothing open with that id (already answered, timed out, stopped); `422` unknown choice, missing/extra answer |
 | `GET /runs/{id}/checkpoints` | `{"checkpoints": [{"id", "step", "files"}]}` (0 = the original) | `404` |
 | `POST /runs/{id}/rewind` | body `{"checkpoint": int}` → `202 {"state": "requested", "checkpoint"}`; applied before the agent's next step (a `checkpoint` event with `restored_by: "human"` follows) | `404`; `409` not acting; `422` unknown checkpoint |
+
+**How a run ends (S8 step 0).** `outcome` (the pill) and the report `headline` come from one backend
+catalogue (`report/endings.py`, snapshot-tested; the sample table is `contract/samples/report-wording.json`).
+Clients show them as written and never show a raw `status`. `delivered` is true only when the run
+**finished with the checks passing and the red-team gate cleared**, or a human released the patch. A run that
+ends unfinished (`verify_failed`, `budget.*`, `loop.repeat`, `killed`, `invalid_reply`, `error`) is never
+delivered; if it left changes behind they are **withheld** (`delivery_blocked: true`, `outcome: "Withheld"`,
+`GET patch` is `423`) and a human can still `POST release` (which is then `released_by_human`). With nothing to
+hold back the pill is the status label ("Not verified", "Plan rejected", "Out of steps", ...) and `delivered`
+stays false. A stopped run never delivers anything.
 
 ### Deliverables
 

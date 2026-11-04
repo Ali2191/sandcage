@@ -97,8 +97,9 @@ export async function runScenario(ctx: ScenarioContext): Promise<void> {
 
 // ---------------------------------------------------------------------------
 
-function endEarly(run: MockRun, status: "plan_rejected" | "killed" | "needs_clarification", summary: string, p: Plan | null): void {
-  run.emit(doneDraft({ status, summary, plan: p }));
+/** The run ends before a verified result. Its words come from the backend's wording table. */
+function endEarly(run: MockRun, status: "plan_rejected" | "killed" | "needs_clarification", blocked: number, p: Plan | null): void {
+  run.emit(doneDraft({ status, summary: reportRow(status, blocked, false).headline, plan: p }));
 }
 
 async function demo({ run }: ScenarioContext): Promise<void> {
@@ -111,11 +112,11 @@ async function demo({ run }: ScenarioContext): Promise<void> {
       const answer = await run.ask(e.approval);
       if (!answer.choice.approves && e.approval.kind === "plan") {
         run.emit({ ...strip(events.find((x) => x.kind === "plan" && x.state === "proposed") as Event), state: "rejected" } as Draft<Event>);
-        return endEarly(run, "plan_rejected", "The plan was not approved, so the agent never started.", lastPlan);
+        return endEarly(run, "plan_rejected", 0, lastPlan);
       }
       if (!answer.choice.approves && e.approval.kind === "breaker") {
         run.emit({ kind: "breaker", phase: "act", state: "killed", reason: "Ended by a human at the breaker.", source: "README.md", denials: 2, injection_denials: 2, trips: 1 });
-        return endEarly(run, "killed", "The run was ended at the circuit breaker. Nothing was delivered.", lastPlan);
+        return endEarly(run, "killed", 2, lastPlan);
       }
       continue;
     }
@@ -173,7 +174,7 @@ async function understandAndPlan(run: MockRun, approvePlan: boolean, task: strin
     );
     if (!a.choice.approves) {
       run.emit(planEvent("rejected", false));
-      endEarly(run, "plan_rejected", "The plan was not approved, so the agent never started.", p);
+      endEarly(run, "plan_rejected", 0, p);
       return null;
     }
     run.emit(planEvent("approved", true));
@@ -393,7 +394,7 @@ async function clarify({ run, approvePlan }: ScenarioContext): Promise<void> {
   );
   if (!a.choice.approves || !a.text) {
     run.emit({ kind: "understand", phase: "understand", state: "unanswered", task: "Fix the discount.", done_criteria: [], question, answer: null, valid: true });
-    return endEarly(run, "needs_clarification", "The agent needed an answer and did not get one, so it did not start.", null);
+    return endEarly(run, "needs_clarification", 0, null);
   }
   run.emit({ kind: "understand", phase: "understand", state: "answered", task: "Fix the discount.", done_criteria: ["The failing discount test passes"], question, answer: a.text, valid: true });
   const p = await understandAndPlan(run, approvePlan, "Fix the discount.");

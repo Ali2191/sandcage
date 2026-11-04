@@ -53,16 +53,19 @@ test("denying the sneaky edit ends the run honestly: declined, not blocked", asy
   // A refused ask is not a gate denial: the headline does not claim Sandcage blocked anything,
   // and the declined line says what happened.
   const headline = page.getByRole("heading", { level: 1 });
-  await expect(headline).toHaveText("The run ended before the task was done.");
+  await expect(headline).toHaveText("The agent stopped, but the checks did not pass. Nothing is delivered.");
   await expect(headline).not.toContainText("blocked");
   await expect(page.getByTestId("declined-line")).toHaveText("You did not approve 1 request, so it did not run.");
   // The containment map and the summary bar agree with the headline: nothing was blocked.
   await expect(page.getByText(/\d+ checked · 0 blocked/)).toBeVisible();
   await expect(page.getByText(/actions · \d+ blocked/)).toHaveCount(0);
-  // What the API says happened is what the page shows: verification failed, and the run still
-  // offers the patch it has (the human reads it before using it), so the card must be there.
+  // Verification failed, so nothing is delivered: the pill says so in words (never the raw
+  // status) and there is no Download button.
   const row = await api.row(id);
   expect(row["status"]).toBe("verify_failed");
-  expect(row["delivered"]).toBe(true);
-  await expect(page.getByRole("button", { name: "Download patch" })).toBeVisible();
+  expect(row["delivered"]).toBe(false);
+  expect(row["outcome"]).toBe("Not verified");
+  await expect(page.getByText("Not verified", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("verify_failed")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Download patch" })).toHaveCount(0);
 });

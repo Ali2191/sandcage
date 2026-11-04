@@ -49,8 +49,11 @@ def test_headline_wording_snapshot() -> None:
         ),
         "stopped-0": "You stopped this run. Nothing left the cage.",
         "stopped-2": "You stopped this run. Before that, Sandcage blocked it 2 times.",
-        "killed-0": "The run ended before the task was done.",
-        "killed-2": "Sandcage blocked the agent 2 times. The run ended before the task was done.",
+        "killed-0": "The run ended at the breaker before the task was done. Nothing is delivered.",
+        "killed-2": (
+            "Sandcage blocked the agent 2 times. "
+            "The run ended at the breaker before the task was done. Nothing is delivered."
+        ),
     }
 
 

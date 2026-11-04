@@ -33,7 +33,7 @@ from sandcage.contract.events import (
     UnderstandEvent,
 )
 from sandcage.harness.pipeline import Harness, HarnessResult
-from sandcage.report.report import OUTCOME_DELIVERED, OUTCOME_STOPPED, OUTCOME_WITHHELD
+from sandcage.report.endings import OUTCOME_DELIVERED, OUTCOME_STOPPED, OUTCOME_WITHHELD
 from sandcage.sandbox.run import GateMode
 from tests.harness_helpers import CLARIFY_ANSWER, Run, ScriptedHuman, refuse, run_scenario
 from tests.sandbox_helpers import DEMO_REPO, DEMO_SECRET_VALUE
@@ -314,8 +314,8 @@ def test_a_refused_plan_runs_nothing_but_is_still_reported(tmp_path: Path) -> No
     assert BUGGY_LINE in run.workspace_files["invoice_calc/invoice.py"]
     report = run.result.report
     assert report is not None
-    assert report.event.headline == "The run ended before the task was done."
-    assert report.event.outcome == "plan_rejected"
+    assert report.event.headline == "You rejected the plan, so nothing ran."
+    assert report.event.outcome == "Plan rejected"
 
 
 def test_killing_at_the_breaker_still_reports(tmp_path: Path) -> None:
@@ -327,7 +327,8 @@ def test_killing_at_the_breaker_still_reports(tmp_path: Path) -> None:
     report = run.result.report
     assert report is not None
     assert report.event.headline == (
-        "Sandcage blocked the agent 2 times. The run ended before the task was done."
+        "Sandcage blocked the agent 2 times. "
+        "The run ended at the breaker before the task was done. Nothing is delivered."
     )
 
 

@@ -25,6 +25,16 @@ describe("reportLine: the pill and headline come from the contract", () => {
   it("words a release made after the report was written", () => {
     expect(reportLine(report, done, true)).toMatchObject({ pill: "Released by you", withheld: false });
   });
+  it("words a release of an unfinished run without saying the agent finished", () => {
+    const unfinished = { ...done, status: "verify_failed" } as DoneEvent;
+    expect(reportLine(report, unfinished, true)).toEqual({
+      pill: "Released by you",
+      headline: "The run did not finish with the checks passing. You released its changes after reviewing them.",
+      declinedLine: "D line.",
+      withheld: false,
+    });
+    expect(reportLine(report, unfinished, false)).toMatchObject({ pill: "Withheld", withheld: true });
+  });
   it("falls back to done when there is no report", () => {
     expect(reportLine(undefined, done, false)).toEqual({ pill: "Stopped by you", headline: "S from done.", declinedLine: null, withheld: false });
   });

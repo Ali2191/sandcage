@@ -15,6 +15,7 @@ import {
   countdownAnnouncement,
   flaggedPaths,
   gateCounts,
+  hasPatchCard,
   hostsIn,
   latestBudget,
   measuredTokens,
@@ -323,6 +324,26 @@ describe("outcome", () => {
 
   it("keeps any other status as it is", () => {
     expect(outcome([...upTo(11), { ...done, status: "verify_failed" }])).toEqual({ kind: "ended", status: "verify_failed" });
+  });
+
+  it("holds the changes of an unfinished run back, and never calls it delivered", () => {
+    const unfinished = (blocked: boolean, released: boolean): Event[] => [
+      ...withhold(blocked, released).filter((e) => e.kind !== "done"),
+      { ...done, status: "verify_failed", delivered: released, delivery_blocked: blocked, released_by_human: released },
+    ];
+    expect(outcome(unfinished(true, false))).toEqual({ kind: "withheld" });
+    expect(outcome(unfinished(true, true))).toEqual({ kind: "released" });
+    expect(outcome(unfinished(false, false))).toEqual({ kind: "ended", status: "verify_failed" });
+  });
+
+  it("shows a patch card only for a delivered, withheld or released run", () => {
+    expect(hasPatchCard(SAMPLE)).toBe(true);
+    expect(hasPatchCard(withhold(true, false))).toBe(true);
+    expect(hasPatchCard(withhold(true, true))).toBe(true);
+    expect(hasPatchCard([...upTo(11), { ...done, status: "stopped" }])).toBe(false);
+    for (const status of ["verify_failed", "plan_rejected", "budget.steps", "killed", "error"] as const) {
+      expect(hasPatchCard([...SAMPLE.filter((e) => e.kind !== "done"), { ...done, status, delivered: false }])).toBe(false);
+    }
   });
 });
 

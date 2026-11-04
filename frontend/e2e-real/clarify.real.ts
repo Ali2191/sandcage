@@ -25,5 +25,5 @@ test("clarify: Stop the run ends it as needing clarification", async ({ page, ap
   const id = await api.start("clarify");
   await page.goto(`/runs/${id}`);
   await page.getByRole("button", { name: "Stop the run" }).click();
-  await expect(page.getByText("needs_clarification", { exact: true })).toBeVisible();
+  await expect(page.getByText("Needs an answer", { exact: true })).toBeVisible();
 });

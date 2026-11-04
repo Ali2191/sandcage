@@ -69,6 +69,7 @@ from sandcage.masking import mask
 from sandcage.plan.layer import AMENDMENT, PlanLayer, propose_amendment
 from sandcage.plan.planner import PlanError, file_tree, make_plan
 from sandcage.policy import Decision, PolicyEngine, RuleSource
+from sandcage.report.endings import ending
 from sandcage.report.report import Report, ReportInput, build_report, outcome
 from sandcage.roles.reader import QuarantinedReader
 from sandcage.roles.redteam import Review, review
@@ -492,7 +493,15 @@ class VerifyStage:
 
 
 class RedteamStage:
+    """Reviews the patch. The patch is held back (``withheld``) when the red-team blocks it,
+    and also when the run did not finish verified but left changes behind; only the first
+    case raises a question during the run, because for an unfinished run the report is
+    where the human sees why, and the release path is there."""
+
     phase = Phase.REDTEAM
+
+    def __init__(self, status: RunStatus) -> None:
+        self.status = status
 
     def run(self, ctx: RunContext) -> RunStatus | None:
         workspace = ctx.run.workspace
@@ -513,8 +522,9 @@ class RedteamStage:
         ctx.review = found
         ctx.emit(found.event(ctx.run_id, ctx.clock()))
         patch = build_patch(ctx.original, workspace.path, ctx.diff)
-        delivery = Delivery(patch, withheld=found.blocked)
-        if found.blocked:
+        finished = self.status is RunStatus.FINISHED
+        delivery = Delivery(patch, withheld=found.blocked or (not finished and bool(patch.files)))
+        if found.blocked and finished:
             resolution = ctx.ask(found.approval(len(ctx.steps)))
             if ctx.is_stopped():
                 return RunStatus.STOPPED
@@ -851,7 +861,7 @@ class Harness:
         return RunStatus.FINISHED
 
     def _post(self, status: RunStatus) -> RunStatus:
-        for stage in (RedteamStage(), DeliverStage(), ReportStage(status), LearnStage()):
+        for stage in (RedteamStage(status), DeliverStage(), ReportStage(status), LearnStage()):
             if self.ctx.is_stopped():  # checked again before delivery and before each stage
                 return RunStatus.STOPPED
             ended = self._safely(stage)
@@ -896,7 +906,7 @@ class Harness:
             return f"The run failed: {ctx.error}"
         if ctx.agent_result is not None and ctx.agent_result.summary:
             return mask(ctx.agent_result.summary)
-        return f"The run ended: {status.value}."
+        return ending(status).plain
 
     def _done(self, status: RunStatus, summary: str) -> DoneEvent:
         ctx = self.ctx
@@ -923,7 +933,9 @@ class Harness:
             breaker_trips=ctx.guards.breaker.trips,
             rollbacks=ctx.rollbacks,
             checkpoints=ctx.checkpoints.latest,
-            delivered=delivery is not None and not delivery.blocked,
+            delivered=status is RunStatus.FINISHED
+            and delivery is not None
+            and not delivery.blocked,
             delivery_blocked=withheld,
             released_by_human=bool(delivery and delivery.released_by_human),
             changed_files=list(delivery.patch.files) if delivery else [],

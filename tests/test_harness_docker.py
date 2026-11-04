@@ -10,7 +10,7 @@ import pytest
 from sandcage.agent.scenarios import FIXED_LINE, ScenarioId
 from sandcage.contract.approval import ApprovalKind
 from sandcage.contract.events import DoneEvent, RunStatus, StepEvent, VerifyEvent
-from sandcage.report.report import OUTCOME_DELIVERED, OUTCOME_WITHHELD
+from sandcage.report.endings import OUTCOME_DELIVERED, OUTCOME_WITHHELD
 from sandcage.sandbox.container import DockerSandbox, Limits
 from sandcage.sandbox.docker_api import DockerError, EngineClient
 from sandcage.sandbox.run import RunnerFactory

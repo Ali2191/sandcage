@@ -32,8 +32,10 @@ test("denying the plan ends the run without starting the agent", async ({ page, 
   await page.goto(`/runs/${id}`);
   await expect(banner(page)).toContainText("APPROVE THE PLAN");
   await page.keyboard.press("d");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The run ended before the task was done.");
-  await expect(page.getByText("plan_rejected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("You rejected the plan, so nothing ran.");
+  await expect(page.getByText("Plan rejected", { exact: true })).toBeVisible();
+  await expect(page.getByText("plan_rejected")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Download patch" })).toHaveCount(0);
 });
 
 test("ending the run at the breaker kills it", async ({ page, api }) => {
@@ -43,5 +45,5 @@ test("ending the run at the breaker kills it", async ({ page, api }) => {
   await page.keyboard.press("a");
   await expect(banner(page)).toContainText("CIRCUIT BREAKER");
   await page.keyboard.press("k");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Sandcage blocked the agent 2 times. The run ended before the task was done.");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Sandcage blocked the agent 2 times. The run ended at the breaker before the task was done. Nothing is delivered.");
 });
