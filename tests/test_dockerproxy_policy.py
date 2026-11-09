@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -406,6 +407,91 @@ def test_random_paths_only_reach_known_routes(target: str) -> None:
     decision = check_request("POST", target, b"{}", CONFIG)
     if decision.allowed:
         assert decision.container is not None or decision.exec_id is not None
+
+
+# Written independently of the proxy's route table: every (method, path) the proxy may ever
+# allow, with the API version prefix removed. Anything else allowed is a hole.
+_ID_RE = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}"
+MAY_ALLOW = [
+    (method, re.compile(pattern))
+    for method, pattern in (
+        ("GET", r"/_ping"),
+        ("HEAD", r"/_ping"),
+        ("GET", r"/version"),
+        ("GET", r"/info"),
+        ("GET", r"/images/[a-z0-9][a-z0-9._/:@-]*/json"),
+        ("GET", r"/containers/json"),
+        ("POST", r"/containers/create"),
+        ("GET", rf"/containers/{_ID_RE}/(json|logs)"),
+        ("POST", rf"/containers/{_ID_RE}/(start|stop|kill|wait|exec)"),
+        ("DELETE", rf"/containers/{_ID_RE}"),
+        ("POST", rf"/exec/{_ID_RE}/start"),
+        ("GET", rf"/exec/{_ID_RE}/json"),
+    )
+]
+DOCKER_SEGMENTS = [
+    "containers",
+    "exec",
+    "images",
+    "json",
+    "create",
+    "start",
+    "stop",
+    "kill",
+    "wait",
+    "logs",
+    "_ping",
+    "version",
+    "info",
+    "build",
+    "volumes",
+    "networks",
+    "archive",
+    "attach",
+    "commit",
+    "export",
+    "update",
+    "pause",
+    "resize",
+    "system",
+    "df",
+    "plugins",
+    "secrets",
+    "swarm",
+    "auth",
+    "session",
+    "events",
+    "prune",
+    "push",
+    "tag",
+    "load",
+    "get",
+    "top",
+    "sandcage-1",
+    "abc123",
+    "v1.44",
+    "..",
+    ".",
+    "",
+    "%2e%2e",
+    "sandcage-sandbox:latest",
+]
+
+
+@given(
+    st.sampled_from(["GET", "POST", "DELETE", "PUT", "HEAD"]),
+    st.booleans(),
+    st.lists(st.sampled_from(DOCKER_SEGMENTS), min_size=1, max_size=5),
+    st.sampled_from(["", "?all=1", "?force=1", "?name=x", "?filters=%7B%7D", "?a=1&a=2"]),
+)
+def test_random_docker_paths_never_reach_an_unlisted_call(
+    method: str, versioned: bool, segments: list[str], query: str
+) -> None:
+    path = ("/v1.44" if versioned else "") + "/" + "/".join(segments)
+    decision = check_request(method, path + query, b"{}", CONFIG)
+    if decision.allowed:
+        bare = path.removeprefix("/v1.44") if versioned else path
+        assert any(m == method and p.fullmatch(bare) for m, p in MAY_ALLOW), (method, path)
 
 
 # --- configuration -------------------------------------------------------------------
