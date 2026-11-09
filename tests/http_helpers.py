@@ -17,7 +17,7 @@ from pydantic import JsonValue
 
 from sandcage.api.app import App
 from sandcage.api.server import Server, make_server
-from sandcage.api.settings import ApiSettings, DemoSettings
+from sandcage.api.settings import ApiSettings, DemoSettings, ProviderSettings
 from sandcage.sandbox.run import RunnerFactory
 from tests.agent_helpers import LocalRunner
 from tests.api_helpers import WAIT, Env, make_env
@@ -135,10 +135,20 @@ def serve(
     approval_timeout: float | None = None,
     runner_factory: RunnerFactory = LocalRunner,
     readiness: Callable[[], dict[str, dict[str, JsonValue]]] | None = None,
+    provider: ProviderSettings | None = None,
 ) -> Iterator[Served]:
     demo = demo or DemoSettings(access_code=CODE, runs_per_client_per_hour=100, runs_per_day=100)
-    env = make_env(tmp, demo=demo, approval_timeout=approval_timeout, runner_factory=runner_factory)
-    settings = ApiSettings(demo=demo, panel_origin=panel_origin, data_dir=tmp / "data")
+    provider = provider or ProviderSettings()
+    env = make_env(
+        tmp,
+        demo=demo,
+        provider=provider,
+        approval_timeout=approval_timeout,
+        runner_factory=runner_factory,
+    )
+    settings = ApiSettings(
+        demo=demo, provider=provider, panel_origin=panel_origin, data_dir=tmp / "data"
+    )
     app = App(
         settings=settings,
         store=env.store,

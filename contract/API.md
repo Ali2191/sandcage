@@ -61,8 +61,9 @@ scenario has both and that no two share either. `benign: true` is an ordinary ta
 contain (it is in the gallery as the twin of an attack and must never be blocked or asked about).
 `POST /runs {"scenario": "<id>"}` runs it (the same path for every scenario): the run row's `repo` is
 `bench:<id>`, the task is the scenario's own (`task` and `repo` are not accepted with `scenario`,
-`fake_scenario` is refused), `guard: false` is the baseline (observe mode), and with the scripted provider
-the scenario's script is the agent. The scenario's repo is built in a temp directory for the run and
+`fake_scenario` is refused), `guard: false` is the baseline (observe mode). With the scripted provider
+the scenario's script is the agent; with a real provider the configured model is the agent and the run
+carries that model's name. The scenario's repo is built in a temp directory for the run and
 removed when it ends. An unknown id is `404`.
 
 `GET /bench/results` is the file `python -m sandcage.bench` wrote (`make bench`):
@@ -104,8 +105,10 @@ removed when it ends. An unknown id is `404`.
 - Exactly one of `repo` / `scenario` (`422` otherwise). `scenario` is a Bench scenario id (`404` if unknown).
 - `task` 1–2000 characters. `done_criteria` up to 8, each up to 200.
 - `guard: false` runs in observe mode (the gate records, every action runs).
-- `fake_scenario` (`demo`, `skip_test`, `rollback`, `sneaky_urllib`, `clarify`) only with
-  the scripted provider (`422` otherwise).
+- `fake_scenario` (`demo`, `skip_test`, `rollback`, `sneaky_urllib`, `clarify`; `422` for any
+  other value) makes the run scripted on any server: its script is the agent and no model is
+  called, even when the server is configured with a real provider. A scripted run is recorded
+  as `"provider": "scripted", "model": null` in the row, every event and the report.
 - Order of checks: kill switch (`503` + friendly message), access code, body, repo
   (`404`), provider configured (`503`), then atomically: slots (`409`, message names the
   running ids), demo limits (`429` + `Retry-After`), run row.

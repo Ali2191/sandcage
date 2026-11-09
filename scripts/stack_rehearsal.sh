@@ -10,6 +10,10 @@
 # State lives in $SANDCAGE_REHEARSAL_DIR (default ~/.sandcage-rehearsal, mode 700): the env file,
 # a random access code in a mode-600 file, a fake key file, and the work and data directories.
 # The access code is never printed.
+#
+# SANDCAGE_REHEARSAL_PROVIDER=vultr mirrors a real deployment's provider settings (with the fake
+# key file): the panel and API then behave as they do on a VM. Any run that reaches the model
+# would then call the provider with that fake key, so use it only for flows that do not.
 set -euo pipefail
 
 main() {
@@ -58,7 +62,7 @@ stack_up() {
         printf 'DEMO_RUNS_PER_IP_PER_HOUR=1000\n'
         printf 'DEMO_RUNS_PER_DAY=1000\n'
         printf 'DEMO_MAX_CONCURRENT_RUNS=4\n'
-        printf 'LLM_PROVIDER=scripted\n'
+        printf 'LLM_PROVIDER=%s\n' "${SANDCAGE_REHEARSAL_PROVIDER:-scripted}"
         printf 'SANDCAGE_LLM_KEY_FILE=%s\n' "$dir/secrets/llm-api-key"
         printf 'SANDBOX_RUNTIME=runc\n'
         printf 'DOCKER_GID=%s\n' "$gid"

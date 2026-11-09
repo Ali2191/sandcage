@@ -385,8 +385,8 @@ def test_start_refuses_what_it_cannot_run(env: Env, tmp_path: Path) -> None:
     with pytest.raises(UnavailableError):
         real.manager.start(StartRequest(repo="invoice-calc", task=TASK), client="x")
     keyed = ProviderSettings(provider="vultr", api_key="k", model="m")
-    with pytest.raises(InvalidError):
-        make_env(tmp_path / "keyed", provider=keyed).start("demo")
+    with pytest.raises(InvalidError):  # a scripted run on a real provider: known ids only
+        make_env(tmp_path / "keyed", provider=keyed).start("no_such_scenario")
     assert env.store.list_runs()[1] == 0
 
 

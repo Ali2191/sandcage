@@ -120,6 +120,8 @@ class _Active:
     id: str
     repo: str
     guard: bool
+    provider: str  # this run's own labels: "scripted" and no model for a scripted run
+    model: str | None
     lock: threading.Lock = field(default_factory=threading.Lock)
     thread: threading.Thread | None = None
     harness: Harness | None = None
@@ -260,11 +262,10 @@ class RunManager:
             path = None
         elif path is None:
             raise NotFoundError("There is no demo repo by that name.")
-        if request.fake_scenario is not None:
-            if not self._provider.scripted:
-                raise InvalidError("fake_scenario works only with the scripted provider.")
-            if request.fake_scenario not in {s.value for s in ScenarioId}:
-                raise InvalidError("That fake scenario does not exist.")
+        if request.fake_scenario is not None and request.fake_scenario not in {
+            s.value for s in ScenarioId
+        }:
+            raise InvalidError("That fake scenario does not exist.")
         problem = self._provider.problem
         if problem is not None:
             raise UnavailableError(problem)
@@ -272,6 +273,7 @@ class RunManager:
             if len(self._active) >= self._guard.settings.max_concurrent:
                 raise BusyError(list(self._active))
             run_id = self._new_id()
+            provider, model = self._labels(request)
             cap = self._guard.admit(client, run_id)
             try:
                 self._store.create_run(
@@ -279,13 +281,13 @@ class RunManager:
                     repo=request.repo,
                     task=request.task,
                     guard=request.guard,
-                    provider=self._provider.provider,
-                    model=None if self._provider.scripted else self._provider.model,
+                    provider=provider,
+                    model=model,
                 )
             except BaseException:
                 self._guard.finish(run_id)
                 raise
-            active = _Active(run_id, request.repo, request.guard)
+            active = _Active(run_id, request.repo, request.guard, provider, model)
             thread = threading.Thread(
                 target=self._run,
                 args=(active, request, path, cap),
@@ -297,8 +299,23 @@ class RunManager:
             thread.start()
         return run_id
 
-    def _default_models(self, request: StartRequest) -> Models:
+    def _scripted(self, request: StartRequest) -> bool:
+        """A run is scripted when the server's provider is, or when the request names a
+        fake scenario: its script is the agent and no model is ever called, whatever
+        provider the server is configured with."""
+        return self._provider.scripted or request.fake_scenario is not None
+
+    def _labels(self, request: StartRequest) -> tuple[str, str | None]:
+        """The provider and model recorded for a run. A scripted run never carries the
+        configured provider's model name: it must not read as a real model's behaviour."""
         if self._provider.scripted:
+            return self._provider.provider, None
+        if self._scripted(request):
+            return "scripted", None
+        return self._provider.provider, self._provider.model
+
+    def _default_models(self, request: StartRequest) -> Models:
+        if self._scripted(request):
             chosen = find_scenario(request.scenario) if request.scenario else None
             if chosen is not None:
                 return models_for(chosen)
@@ -396,8 +413,8 @@ class RunManager:
                 guard=request.guard,
                 approve_plan=request.approve_plan,
                 limits=limits,
-                model=None if self._provider.scripted else self._provider.model,
-                provider=self._provider.provider,
+                model=active.model,
+                provider=active.provider,
                 sandbox_runtime=self._runtime_label(),
                 learned_suspicious=layer.suspicious,
                 learned_ids=layer.ids,
@@ -459,8 +476,8 @@ class RunManager:
             steps=0,
             guard=active.guard,
             outcome=outcome(status, withheld=False),
-            provider=self._provider.provider,
-            model=None if self._provider.scripted else self._provider.model,
+            provider=active.provider,
+            model=active.model,
             sandbox_runtime=self._runtime_label(),
         )
         self._finish(active, done)

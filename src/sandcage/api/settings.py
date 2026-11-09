@@ -89,8 +89,8 @@ class DemoSettings:
 
 @dataclass(frozen=True)
 class ProviderSettings:
-    """Which models runs use. ``scripted`` needs nothing and is the only provider that
-    accepts a ``fake_scenario``; a real provider needs a key, which is never shown."""
+    """Which models runs use. ``scripted`` needs nothing; a real provider needs a key, which
+    is never shown. A run with a ``fake_scenario`` is scripted whatever the provider."""
 
     provider: str = "scripted"
     base_url: str = VULTR_BASE_URL
