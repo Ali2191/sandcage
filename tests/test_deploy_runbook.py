@@ -91,7 +91,8 @@ def test_it_covers_every_step_the_handoff_lists() -> None:
 def test_it_contains_the_safety_rules() -> None:
     body = text()
     assert "never paste" in body.lower() or "Never paste" in body
-    assert "2026-12-04" in body
+    assert "destroy it (below) as soon as you no longer need it" in body
+    assert "self-hosted deployment" in body and "no hosted public instance" in body
     assert "$0.06 per hour" in body
     assert "Auto Backups** **off" in body or "Auto Backups **off**" in body
     assert "Allow write access" in body

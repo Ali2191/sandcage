@@ -1,4 +1,9 @@
-# Runbook: put Sandcage on a Vultr VM (S9b)
+# Runbook: self-host Sandcage on a Linux VM
+
+This runbook describes a **self-hosted deployment**: your own Sandcage instance on a VM you
+create, control and pay for. There is no hosted public instance of Sandcage. It was written for,
+and run on, a Vultr Cloud Compute VM with Ubuntu 24.04; any x86 Ubuntu 24.04 VM behind a cloud
+firewall works the same way, only the console steps differ.
 
 Follow it top to bottom. Every command is meant to be pasted as it is; the only things you
 type yourself are the values in angle brackets, listed here once.
@@ -12,7 +17,8 @@ type yourself are the values in angle brackets, listed here once.
 
 Three rules for the whole runbook:
 
-- **The Vultr inference key is typed only at the hidden prompt on the VM** (step g). Never paste it
+- **The model provider's API key (Vultr inference by default) is typed only at the hidden prompt
+  on the VM** (step g). Never paste it
   into a chat, a command line, a screenshot, a file in the repository or a shell history.
 - **The access code is shown once** on the VM's terminal. Copy it into your password manager. Do
   not screenshot it and do not paste it into a chat.
@@ -31,9 +37,9 @@ and the panel state the runtime that is really in use, so a missing gVisor is vi
 In the Vultr console: **Products → Compute → Deploy** (or "Deploy New Server").
 
 1. **Type:** Cloud Compute, **x86 (Intel or AMD)**, not ARM.
-2. **Plan:** the 2 vCPU / 8 GB class (the credits plan used `vx1-g-2c-8g`, about $0.06 per hour).
-3. **Location:** the region closest to the judges. If you do not know where they are, pick a large
-   US-East or Western-Europe region; the model calls go to Vultr's API whichever you choose.
+2. **Plan:** the 2 vCPU / 8 GB class (`vx1-g-2c-8g`, about $0.06 per hour at the time of writing).
+3. **Location:** the region closest to you and your users; the model calls go to the provider's
+   API whichever you choose.
 4. **Image:** Ubuntu **24.04 LTS** x64.
 5. **SSH key:** add your Mac's public key and select it. If you have none yet, on the Mac:
 
@@ -185,15 +191,16 @@ Verify that containers really run inside gVisor (the host kernel is 6.x; gVisor 
 sudo docker run --rm --runtime=runsc alpine:3.20 sh -c 'uname -r; dmesg | head -3'
 ```
 
-You must see a kernel version starting `4.4.0` and a line containing `Starting gVisor`. If you see
+You must see gVisor's own kernel version (`4.19.0-gvisor` on the release this was run with; it is
+not the VM's kernel) and a line containing `Starting gVisor`. If you see
 the host's `6.x` kernel and no gVisor line, gVisor is **not** active: stop and see
 "Troubleshooting 5". The deploy script runs the same banner check and refuses to continue without
 it (unless you pass `--allow-runc-fallback`, which prints a warning and records plain Docker).
 
 ## (f) A read-only GitHub deploy key
 
-The repository is private until submission, so the VM reads it with a key that can only read. On
-the VM:
+The VM reads the repository with a key that can only read (this also works for a private fork; the
+public repository can be cloned over HTTPS instead). On the VM:
 
 ```sh
 sudo install -d -m 700 /etc/sandcage
@@ -371,8 +378,8 @@ access code).
 
 ## (k) Tear it all down, and what it costs
 
-The VM costs about **$0.06 per hour** (about $1.44 a day, about $43 for 30 days). The credit
-expires on **2026-12-04**: destroy the VM **before that date**, or earlier once judging is over.
+The VM costs about **$0.06 per hour** (about $1.44 a day, about $43 for 30 days). A stopped VM
+is still billed: destroy it (below) as soon as you no longer need it.
 
 On the VM, optional but tidy:
 
@@ -389,7 +396,7 @@ Then in the consoles, in this order:
 2. **Vultr inference:** revoke the `sandcage-demo` key.
 3. **Vultr instance:** Products → the instance → **Destroy** (Servers → Destroy). Also delete any
    snapshot you took, the firewall group `sandcage-demo`, and the SSH-key entry if you do not need it.
-4. **Vultr Billing:** confirm there is no running resource and the credit is no longer being used.
+4. **Vultr Billing:** confirm there is no running resource and nothing is still being billed.
 5. Your Mac: `rm ~/.sandcage-demo-code`.
 
 ## (l) Troubleshooting: the five most likely failures
