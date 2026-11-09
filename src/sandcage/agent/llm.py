@@ -131,10 +131,23 @@ Transport = Callable[[str, bytes, dict[str, str], float], HttpReply]
 Sleeper = Callable[[float], None]
 
 
+class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
+    """A 3xx is the endpoint's answer, never an address to follow: urllib's default handler
+    re-sends every header but the content ones, ``Authorization`` included, to whatever the
+    ``Location`` names (another host, or plain http)."""
+
+    def redirect_request(self, *_args: object, **_kwargs: object) -> None:
+        return None  # urllib then raises HTTPError with the 3xx itself
+
+
+#: Every request that carries the model key goes through this opener.
+KEY_OPENER: Final = urllib.request.build_opener(_RefuseRedirects)
+
+
 def urllib_transport(url: str, body: bytes, headers: dict[str, str], timeout: float) -> HttpReply:
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")  # noqa: S310
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        with KEY_OPENER.open(request, timeout=timeout) as response:
             return HttpReply(response.status, response.read(MAX_RESPONSE_BYTES + 1))
     except urllib.error.HTTPError as error:
         retry = error.headers.get("Retry-After") if error.headers else None

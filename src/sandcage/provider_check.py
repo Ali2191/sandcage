@@ -33,6 +33,7 @@ from typing import Final
 
 from sandcage.agent import prompts
 from sandcage.agent.llm import (
+    KEY_OPENER,
     Completion,
     HttpReply,
     Message,
@@ -131,7 +132,7 @@ Getter = Callable[[str, dict[str, str], float], HttpReply]
 def urllib_get(url: str, headers: dict[str, str], timeout: float) -> HttpReply:
     request = urllib.request.Request(url, headers=headers, method="GET")  # noqa: S310
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        with KEY_OPENER.open(request, timeout=timeout) as response:
             return HttpReply(response.status, response.read(2_000_001))
     except urllib.error.HTTPError as error:
         return HttpReply(error.code, error.read(2_000_001))
