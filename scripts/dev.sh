@@ -16,6 +16,9 @@ main() {
   trap 'kill "$api" "$panel" 2>/dev/null || true' EXIT INT TERM
   echo "API    http://127.0.0.1:${SANDCAGE_API_PORT}"
   echo "Panel  http://127.0.0.1:3000   (access code: see .dev.env)"
-  wait -n "$api" "$panel"
+  # Portable "wait for either": macOS ships bash 3.2, which has no `wait -n`.
+  while kill -0 "$api" 2>/dev/null && kill -0 "$panel" 2>/dev/null; do
+    sleep 1
+  done
 }
 main "$@"

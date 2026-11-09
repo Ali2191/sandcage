@@ -12,3 +12,5 @@ playwright-report/
 .next-e2e-real/
 .next-e2e-live/
 .next-deploy/
+# Written by `next dev` on a fresh install; not ours.
+AGENTS.md
