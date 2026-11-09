@@ -1,6 +1,6 @@
 """One record for every question Sandcage puts to a human.
 
-The prototype had six special cases (action ask, plan approval, plan amendment, breaker
+An earlier design had six special cases (action ask, plan approval, plan amendment, breaker
 resume, red-team release, clarifying question), each with its own backend path, API
 validation and panel banner. Here each is one :class:`Approval`: the banner's exact
 words, the choices with their shortcut keys, an optional free-text box, the timeout and

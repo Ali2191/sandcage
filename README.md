@@ -3,8 +3,6 @@
 A containment-first harness for AI coding agents: the agent works inside a throwaway
 sandbox, every action passes one policy gate, and the only output is a patch a human reads.
 
-> Built during the Vultr Agent Rush (Nov 3–8, 2026). Design and planning were prepared before the event.
-
 ## Status
 
 Work in progress. Built so far: secret masking and the policy engine (rulebook, command

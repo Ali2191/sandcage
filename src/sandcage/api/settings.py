@@ -37,7 +37,7 @@ class SettingsError(ValueError):
 
 @dataclass(frozen=True)
 class DemoSettings:
-    """Everything the demo guard enforces. Defaults are the hackathon's (DEPLOY.md)."""
+    """Everything the demo guard enforces, with the defaults of a small public deployment."""
 
     public: bool = False
     access_code: str | None = field(default=None, repr=False)
