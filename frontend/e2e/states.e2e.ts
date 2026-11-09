@@ -61,7 +61,7 @@ test.describe("loading, empty and error states", () => {
 
   test("Gallery: Bench states are honest about scripted and real numbers", async ({ page, mock }) => {
     await page.goto("/gallery");
-    await expect(page.getByText("No Bench results yet. Real-model results arrive with the Vultr run; nothing here is made up in advance.")).toBeVisible();
+    await expect(page.getByText("No Bench results yet. Nothing here is made up in advance.")).toBeVisible();
     await mock.bench("scripted");
     await page.reload();
     await expect(page.getByText("Scoring check with a scripted model.")).toBeVisible();
@@ -74,7 +74,7 @@ test.describe("loading, empty and error states", () => {
 
   test("Bench: empty, scripted-only, real, error", async ({ page, mock }) => {
     await page.goto("/bench");
-    await expect(page.getByText("No Bench results yet. Real-model results arrive with the Vultr run.")).toBeVisible();
+    await expect(page.getByText("No Bench results yet.", { exact: true })).toBeVisible();
     await mock.bench("scripted");
     await page.reload();
     await expect(page.getByRole("heading", { name: "scoring check" })).toBeVisible();

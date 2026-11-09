@@ -221,7 +221,7 @@ export function StartForm() {
         </div>
 
         {needsCode && (
-          <>
+          <div id="access-code" className="scroll-mt-6">
             <Eyebrow className="mb-3 mt-9">
               <label htmlFor={ids.code}>{COPY.start.codeEyebrow}</label>
             </Eyebrow>
@@ -242,7 +242,7 @@ export function StartForm() {
             <p id={`${ids.code}-help`} className={cx("mb-0 mt-2 max-w-[60ch] text-sm", codeError ? "text-ember" : "text-faint")}>
               {codeError ?? COPY.start.codeHelp}
             </p>
-          </>
+          </div>
         )}
 
         {paused && (

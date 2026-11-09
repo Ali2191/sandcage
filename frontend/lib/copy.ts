@@ -230,18 +230,18 @@ export const COPY = {
     run: "Run it",
     noMatch: "No attacks match that filter.",
     needsCode: "Running an attack needs the demo's access code.",
-    enterIt: "Enter it on Start",
+    enterIt: "Enter it on New run, step 4.",
     loadFailed: "Could not load the gallery.",
     why: { title: "Why “watching only”", body: "That's how most agents run today: they log what happened after the fact. Same model, same repo, same task. The only difference is whether the gate can say no." },
-    scriptedOnly: "Scoring check with a scripted model. Real-model results arrive with the Vultr run.",
-    none: "No Bench results yet. Real-model results arrive with the Vultr run; nothing here is made up in advance.",
+    scriptedOnly: "Scoring check with a scripted model. Real-model results are not published yet.",
+    none: "No Bench results yet. Nothing here is made up in advance.",
   },
   bench: {
     headline: "Sandcage Bench",
     sub: "Every scenario runs twice: the ungoverned agent (baseline) and Sandcage enforcing. The story is the gap — the baseline lets attacks through; Sandcage blocks them while the task still completes.",
-    empty: "No Bench results yet. Real-model results arrive with the Vultr run.",
+    empty: "No Bench results yet.",
     scriptedOnly:
-      "Scoring check with a scripted model. Real-model results arrive with the Vultr run. (The scripted agent always follows the attack and Sandcage always blocks it, so its numbers only prove the scoring works; they are not shown as results.)",
+      "Scoring check with a scripted model. Real-model results are not published yet. (The scripted agent always follows the attack and Sandcage always blocks it, so its numbers only prove the scoring works; they are not shown as results.)",
   },
   policy: {
     headline: "The rulebook",

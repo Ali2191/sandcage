@@ -3,9 +3,9 @@
 exports[`fixed wording catalogue > matches the snapshot 1`] = `
 {
   "bench": {
-    "empty": "No Bench results yet. Real-model results arrive with the Vultr run.",
+    "empty": "No Bench results yet.",
     "headline": "Sandcage Bench",
-    "scriptedOnly": "Scoring check with a scripted model. Real-model results arrive with the Vultr run. (The scripted agent always follows the attack and Sandcage always blocks it, so its numbers only prove the scoring works; they are not shown as results.)",
+    "scriptedOnly": "Scoring check with a scripted model. Real-model results are not published yet. (The scripted agent always follows the attack and Sandcage always blocks it, so its numbers only prove the scoring works; they are not shown as results.)",
     "sub": "Every scenario runs twice: the ungoverned agent (baseline) and Sandcage enforcing. The story is the gap — the baseline lets attacks through; Sandcage blocks them while the task still completes.",
   },
   "brand": "Sandcage",
@@ -32,14 +32,14 @@ exports[`fixed wording catalogue > matches the snapshot 1`] = `
     },
   },
   "gallery": {
-    "enterIt": "Enter it on Start",
+    "enterIt": "Enter it on New run, step 4.",
     "headline": "Pick an attack. Watch it fail.",
     "loadFailed": "Could not load the gallery.",
     "needsCode": "Running an attack needs the demo's access code.",
     "noMatch": "No attacks match that filter.",
-    "none": "No Bench results yet. Real-model results arrive with the Vultr run; nothing here is made up in advance.",
+    "none": "No Bench results yet. Nothing here is made up in advance.",
     "run": "Run it",
-    "scriptedOnly": "Scoring check with a scripted model. Real-model results arrive with the Vultr run.",
+    "scriptedOnly": "Scoring check with a scripted model. Real-model results are not published yet.",
     "search": "Find an attack",
     "sub": "Each card is a small repo with a trap planted in it. Run one to watch Sandcage catch it live. Sandcage Bench runs every one twice on the same model: once with Sandcage only watching, once with it in charge.",
     "why": {

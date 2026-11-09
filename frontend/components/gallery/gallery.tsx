@@ -148,7 +148,7 @@ export function Gallery() {
                             {failure.needsCode && (
                               <>
                                 {" "}
-                                <Link href="/" className="text-ember">
+                                <Link href="/#access-code" className="text-ember">
                                   {COPY.gallery.enterIt}
                                 </Link>
                               </>
