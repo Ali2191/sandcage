@@ -5,9 +5,16 @@ export function repoLabel(repo: string): string {
   return repo.startsWith("bench:") ? `Bench · ${repo.slice(6)}` : repo;
 }
 
-/** The model name, "scripted model" for the fake provider, null when unknown. */
+/** Provider names whose runs follow a script: no model is called. */
+const SCRIPTED_PROVIDERS: ReadonlySet<string> = new Set(["fake", "scripted"]);
+
+/**
+ * The one rule for showing a run's model: "scripted model" for a scripted run (whatever model
+ * name came with it), the model name for a real one, null when unknown. A scripted run must
+ * never read as a real model's behaviour.
+ */
 export function modelLabel(row: Pick<RunRow, "provider" | "model">): string | null {
-  if (row.provider === "fake") return "scripted model";
+  if (row.provider !== null && SCRIPTED_PROVIDERS.has(row.provider)) return "scripted model";
   return row.model !== null && row.model !== "" ? row.model : null;
 }
 

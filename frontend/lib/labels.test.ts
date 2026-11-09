@@ -17,6 +17,10 @@ describe("labels", () => {
 
   it("labels models", () => {
     expect(modelLabel({ provider: "fake", model: "scripted" })).toBe("scripted model");
+    expect(modelLabel({ provider: "scripted", model: null })).toBe("scripted model");
+    // A scripted run never shows a provider model name, even if one reached the row.
+    expect(modelLabel({ provider: "scripted", model: "deepseek-v4.1-flash-1017" })).toBe("scripted model");
+    expect(modelLabel({ provider: "fake", model: "deepseek-v4.1-flash-1017" })).toBe("scripted model");
     expect(modelLabel({ provider: "vultr", model: "deepseek-v4.1-flash-1017" })).toBe("deepseek-v4.1-flash-1017");
     expect(modelLabel({ provider: null, model: null })).toBeNull();
   });

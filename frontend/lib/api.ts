@@ -196,7 +196,7 @@ export interface ApproveBody {
 export interface StartBody {
   repo?: string;
   scenario?: string;
-  /** Scripted scenario id; the backend honours it only with the scripted provider. */
+  /** Scripted scenario id: the run follows its script and no model is called, on any server. */
   fake_scenario?: string;
   task?: string;
   guard: boolean;

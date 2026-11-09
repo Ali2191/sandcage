@@ -22,6 +22,7 @@ import { isTypingTarget } from "@/lib/keys";
 import { rewind } from "@/lib/api";
 import { Body, Side } from "../shell";
 import { Button, Kbd, Pill } from "../ui";
+import { modelLabel } from "@/lib/labels";
 import { TopBarSlot } from "../top-bar-slot";
 import { DecisionBanner } from "../decision-banner";
 import { useApproval } from "../use-approval";
@@ -136,7 +137,7 @@ export function LiveRun({ runId, events, info, connection }: { runId: string; ev
                 {info ? `${info.repo.startsWith("bench:") ? `Bench · ${info.repo.slice(6)}` : info.repo} · ` : ""}
                 {shortId(runId)} · {clock(elapsed)}
               </span>
-              {info?.model && <Pill tone="neutral">{info.provider === "fake" ? "scripted model" : info.model}</Pill>}
+              {info && modelLabel(info) !== null && <Pill tone="neutral">{modelLabel(info)}</Pill>}
             </div>
             <StageRow stages={stagesNow} />
             <Button size="sm" busy={stopping} onClick={() => void stop()} className="ml-auto max-[960px]:ml-0" aria-keyshortcuts="Escape">

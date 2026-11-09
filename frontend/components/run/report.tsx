@@ -37,6 +37,7 @@ import { actionLine, allowedSentence, ruleLine, stepNumber, timeLabel } from "@/
 import { Body, Main, Side } from "../shell";
 import { TopBarSlot } from "../top-bar-slot";
 import { BlockedIcon, Button, Card, CheckIcon, Eyebrow, Pill, cx } from "../ui";
+import { modelLabel } from "@/lib/labels";
 import { CheckpointsCard, LearnCard, ReachedCard, TrifectaCard, type LearnStatus } from "./cards";
 import { DeliverPanel } from "./deliver-panel";
 
@@ -354,7 +355,7 @@ export function RunReport({
 
   const repoName = info ? (info.repo.startsWith("bench:") ? `Bench · ${info.repo.slice(6)}` : info.repo) : null;
   const guardKnown = done?.guard ?? info?.guard;
-  const modelLabel = done?.provider === "fake" ? "scripted model" : (done?.model ?? info?.model ?? null);
+  const shownModel = modelLabel({ provider: done?.provider ?? info?.provider ?? null, model: done?.model ?? info?.model ?? null });
   const showCheckpoints = cps.rows.length > 1 || cps.lastRestore !== null;
   const reportReady = reportEvent(events) !== undefined;
 
@@ -370,7 +371,7 @@ export function RunReport({
           <div className="flex flex-wrap items-center gap-2" aria-label="Run summary">
             {repoName && <Pill mono>{repoName}</Pill>}
             <Pill mono>run {shortId(runId)}</Pill>
-            {modelLabel && <Pill mono>{modelLabel}</Pill>}
+            {shownModel && <Pill mono>{shownModel}</Pill>}
             {guardKnown !== undefined && <Pill mono>guard {guardKnown ? "on" : "off"}</Pill>}
             {tokens !== null && <Pill mono>{tokens} tokens</Pill>}
             <Pill tone={line.withheld ? "ember" : "solid"} mono>
